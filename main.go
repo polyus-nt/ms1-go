@@ -22,12 +22,6 @@ var jump = []internal.Packet{
 
 func main() {
 
-	for _, v := range internal.TestData {
-		internal.PrintOneChunk(v)
-		fmt.Println()
-	}
-	internal.Xxd(internal.TestData)
-
 	fmt.Println("Start serial")
 
 	ports, _ := enumerator.GetDetailedPortsList()
@@ -40,6 +34,7 @@ func main() {
 			fmt.Printf("   USB product %s\n", port.Product)
 		}
 	}
+
 	port := internal.MkSerial()
 	defer (*port).Close()
 

@@ -58,6 +58,10 @@ func MkSerial() *serial.Port {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	err = port.SetReadTimeout(time.Second)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	return &port
 }
@@ -202,22 +206,22 @@ func _worker(ans bool, port *serial.Port, packets []Packet) {
 
 			switch r := reply.(type) {
 			case Pong:
-				fmt.Printf("Got pong [%#xd]\n", r.value)
+				fmt.Printf("Got pong [%#x]\n", r.value)
 				wait()
 			case Ping:
-				fmt.Printf("Got ping [%#xd]\n", r.value)
+				fmt.Printf("Got ping [%#x]\n", r.value)
 			case GenePong:
-				fmt.Printf("Got pong from gene [%#xd]\n", r.value)
+				fmt.Printf("Got pong from gene [%#x]\n", r.value)
 			case GeneAck:
-				fmt.Printf("Got Ack from gene [%#xd]\n", r.value)
+				fmt.Printf("Got Ack from gene [%#x]\n", r.value)
 			case Garbage:
 				fmt.Printf("Got Garbege %v : %v\n", r.comment, r.garbage)
 				wait()
 			case Ack:
-				fmt.Printf("Got Ack [%#xd]\n", r.value)
+				fmt.Printf("Got Ack [%#x]\n", r.value)
 				wait()
 			case Frame2:
-				fmt.Printf("Frame [ %#xd ] %v.%v\n", r.mark, r.page, r.index)
+				fmt.Printf("Frame [ %#x ] %v.%v\n", r.mark, r.page, r.index)
 				var bin []Bin
 				for i := 0; i < len(r.blob); i += 16 {
 					rI := min(i+16, len(r.blob))
@@ -226,16 +230,16 @@ func _worker(ans bool, port *serial.Port, packets []Packet) {
 				Xxd(bin)
 				wait()
 			case Ref:
-				fmt.Printf("Got ref [%#xd]\n", r.value)
+				fmt.Printf("Got ref [%#x]\n", r.value)
 				wait()
 			case Nack:
-				fmt.Printf("Got Ack [%#xd]\n", r.value)
+				fmt.Printf("Got Ack [%#x]\n", r.value)
 				wait()
 			case ID:
-				fmt.Printf("Got id [%#xd]: %#xd\n", r.mark, r.nanoid)
+				fmt.Printf("Got id [%#x]: %#x\n", r.mark, r.nanoid)
 				wait()
 			case Error:
-				fmt.Printf("Got error [%#xd] \"%v\"\n", r.mark, r.message)
+				fmt.Printf("Got error [%#x] \"%v\"\n", r.mark, r.message)
 				wait()
 			}
 		} else {

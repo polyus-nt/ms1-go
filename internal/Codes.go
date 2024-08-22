@@ -82,6 +82,7 @@ func CodePacket(packet Packet) string {
 	data = append(data, codeLoad(V{packet.Addr.val})...)
 	data = append(data, codeLoad(N{int64(packet.Mark), 2})...)
 	data = append(data, packet.Code...)
+	data = append(data, ':')
 
 	return string(data)
 }
