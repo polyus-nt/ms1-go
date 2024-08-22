@@ -16,12 +16,12 @@ type V struct {
 }
 
 type N struct {
-	value int
+	value int64
 	len   int
 }
 
 type F struct {
-	frame Frame
+	Frame Frame
 }
 
 func codeLoad(load Load) string {
@@ -30,7 +30,7 @@ func codeLoad(load Load) string {
 	case V:
 		return l.v
 	case N:
-		hex := strconv.FormatInt(int64(l.value), 16)
+		hex := strconv.FormatInt(l.value, 16)
 		str := make([]byte, l.len)
 		hexBegin := len(str) - len(hex)
 
@@ -43,20 +43,20 @@ func codeLoad(load Load) string {
 		}
 		return string(str)
 	case F:
-		return EncodeFrameLoad(l.frame)
+		return EncodeFrameLoad(l.Frame)
 	}
 
 	panic(fmt.Errorf("no matches for the load argument (Given type: %T. Expected type N, V or F)", load))
 }
 
 type Packet struct {
-	mark uint8
-	addr Address
-	code string
-	load []Load
+	Mark uint8
+	Addr Address
+	Code string
+	Load []Load
 }
 
-type Mode int
+type Mode int64
 
 const (
 	ModeBlank Mode = iota
@@ -76,77 +76,79 @@ func CodePacket(packet Packet) string {
 	var data []byte
 
 	data = append(data, "--"...)
-	data = append(data, codeLoad(packet.load)...)
-	data = append(data, codeLoad(V{packet.addr.val})...)
-	data = append(data, codeLoad(N{int(packet.mark), 2})...)
-	data = append(data, packet.code...)
+	for _, l := range packet.Load {
+		data = append(data, codeLoad(l)...)
+	}
+	data = append(data, codeLoad(V{packet.Addr.val})...)
+	data = append(data, codeLoad(N{int64(packet.Mark), 2})...)
+	data = append(data, packet.Code...)
 
 	return string(data)
 }
 
 func PacketPing(m uint8) Packet {
 
-	return Packet{mark: m, addr: TestAddress, code: "pi", load: append([]Load{}, V{""})}
+	return Packet{Mark: m, Addr: TestAddress, Code: "pi", Load: append([]Load{}, V{""})}
 }
 
 func PacketPong() Packet {
 
-	return Packet{mark: 0, addr: TestAddress, code: "po", load: append([]Load{}, V{""})}
+	return Packet{Mark: 0, Addr: TestAddress, Code: "po", Load: append([]Load{}, V{""})}
 }
 
-func PacketNuke(i int, m uint8) Packet {
+func PacketNuke(i int64, m uint8) Packet {
 
-	return Packet{mark: m, addr: TestAddress, code: "np", load: append([]Load{}, N{i, 2})}
+	return Packet{Mark: m, Addr: TestAddress, Code: "np", Load: append([]Load{}, N{i, 2})}
 }
 
 func PacketJump() Packet {
 
-	return Packet{mark: 0, addr: TestAddress, code: "jp", load: append([]Load{}, V{""})}
+	return Packet{Mark: 0, Addr: TestAddress, Code: "jp", Load: append([]Load{}, V{""})}
 }
 
 func PacketResetSelf() Packet {
 
-	return Packet{mark: 0, addr: TestAddress, code: "rs", load: append([]Load{}, V{""})}
+	return Packet{Mark: 0, Addr: TestAddress, Code: "rs", Load: append([]Load{}, V{""})}
 }
 
 func PacketResetTarget(m uint8) Packet {
 
-	return Packet{mark: m, addr: TestAddress, code: "rt", load: append([]Load{}, V{""})}
+	return Packet{Mark: m, Addr: TestAddress, Code: "rt", Load: append([]Load{}, V{""})}
 }
 
 func PacketPingTarget(m uint8) Packet {
 
-	return Packet{mark: m, addr: TestAddress, code: "gp", load: append([]Load{}, V{""})}
+	return Packet{Mark: m, Addr: TestAddress, Code: "gp", Load: append([]Load{}, V{""})}
 }
 
 func PacketMakeJump() Packet {
 
-	return Packet{mark: 0, addr: TestAddress, code: "jp", load: append([]Load{}, V{""})}
+	return Packet{Mark: 0, Addr: TestAddress, Code: "jp", Load: append([]Load{}, V{""})}
 }
 
 func PacketTargetRef() Packet {
 
-	return Packet{mark: 10, addr: TestAddress, code: "RF", load: append([]Load{}, V{""})}
+	return Packet{Mark: 10, Addr: TestAddress, Code: "RF", Load: append([]Load{}, V{""})}
 }
 
-func PacketTargetFrame(m uint8, p, i int) Packet {
+func PacketTargetFrame(m uint8, p, i int64) Packet {
 
-	return Packet{mark: m, addr: TestAddress, code: "rf", load: append([]Load{}, N{p, 2}, N{i, 2})}
+	return Packet{Mark: m, Addr: TestAddress, Code: "rf", Load: append([]Load{}, N{p, 2}, N{i, 2})}
 }
 
 func PacketMode(mode Mode) Packet {
 
-	return Packet{mark: 0, addr: TestAddress, code: "st", load: append([]Load{}, N{int(mode), 2})}
+	return Packet{Mark: 0, Addr: TestAddress, Code: "st", Load: append([]Load{}, N{int64(mode), 2})}
 }
 
-func PacketSetId(m uint8, w int) Packet {
+func PacketSetId(m uint8, w int64) Packet {
 
-	return Packet{mark: m, addr: ZeroAddress, code: "id", load: append([]Load{}, N{w, 16})}
+	return Packet{Mark: m, Addr: ZeroAddress, Code: "id", Load: append([]Load{}, N{w, 16})}
 }
 
 func PacketGetId(m uint8) Packet {
 
-	return Packet{mark: m, addr: ZeroAddress, code: "ig", load: []Load{}}
+	return Packet{Mark: m, Addr: ZeroAddress, Code: "ig", Load: []Load{}}
 }
 
 func GetPart(field Field, s string) string {
@@ -155,23 +157,23 @@ func GetPart(field Field, s string) string {
 	return s[field.start:][:remains]
 }
 
-func GetHex(field Field, s string) (int, error) {
+func GetHex(field Field, s string) (int64, error) {
 
 	blob := GetPart(field, s)
-	num, err := strconv.ParseInt(blob, 16, 32)
+	num, err := strconv.ParseInt(blob, 16, 64)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "getHex [%v] failed! {error: %v}", field.descr, err)
 	}
 
-	return int(num), err
+	return num, err
 }
 
-func GetSignedHex(field Field, s string) (int, error) {
+func GetSignedHex(field Field, s string) (int64, error) {
 
 	blob := GetPart(Field{start: field.start + 1, len: field.len - 1}, s)
 
-	num, err := strconv.ParseInt(blob, 16, 32)
+	num, err := strconv.ParseInt(blob, 16, 64)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "getSignedHex [%v] failed! {error: %v}", field.descr, err)
@@ -181,12 +183,12 @@ func GetSignedHex(field Field, s string) (int, error) {
 		num = -num
 	}
 
-	return int(num), err
+	return num, err
 }
 
-func Decoder(fields []Field, s string) ([]int, error) {
+func Decoder(fields []Field, s string) ([]int64, error) {
 
-	var res []int
+	var res []int64
 
 	for _, field := range fields {
 		num, err := GetHex(field, s)

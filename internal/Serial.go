@@ -2,30 +2,30 @@ package internal
 
 import (
 	"fmt"
-	"github.com/tarm/serial"
+	"go.bug.st/serial"
 	"log"
 	"os"
 	"time"
 )
 
 const (
-	_Com string = "/dev/ttyACM0"
+	_Com string = "COM6"
 )
 
 // general type (for enum impl)
 type Reply interface{}
 
-// derrived types for Reply
+// derived types for Reply
 type Ping struct{ value int }
 type GenePong struct{ value int }
 type GeneAck struct{ value int }
 type Pong struct{ value int }
 type Ack struct{ value int }
 type Nack struct{ value int }
-type Ref struct{ value int }
+type Ref struct{ value int64 }
 type ID struct {
 	mark   int
-	nanoid int
+	nanoid int64
 }
 type Frame2 struct {
 	page  int
@@ -48,33 +48,41 @@ func wait() {
 
 func MkSerial() *serial.Port {
 
-	c := &serial.Config{Name: _Com, Baud: 115200, Parity: serial.ParityNone, StopBits: serial.Stop1, ReadTimeout: time.Second}
+	mode := &serial.Mode{
+		BaudRate: 115200,
+		Parity:   serial.NoParity,
+		StopBits: serial.OneStopBit,
+	}
 
-	s, err := serial.OpenPort(c)
+	port, err := serial.Open("COM6", mode)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	return s
+	return &port
 }
 
-func PutMessage(serial *serial.Port, packet Packet) {
+func PutMessage(port *serial.Port, packet Packet) {
 
 	var code = CodePacket(packet)
 
 	fmt.Printf("Msg -> %v\n", code)
-	serial.Write([]byte(code))
+	write, err := (*port).Write([]byte(code))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Serial write %v bytes\n", write)
 }
 
 // Считывает требуемое количество байт с порта
-func getSerialBytes(serial *serial.Port, count int) []byte {
+func getSerialBytes(port *serial.Port, count int) []byte {
 
 	buffer := make([]byte, count)
 	ready := 0
 	bArr := buffer
 
 	for {
-		qBytes, err := serial.Read(buffer)
+		qBytes, err := (*port).Read(buffer)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -88,50 +96,50 @@ func getSerialBytes(serial *serial.Port, count int) []byte {
 	return bArr
 }
 
-func GetReply(serial *serial.Port) Reply {
+func GetReply(port *serial.Port) Reply {
 
-	for getSerialBytes(serial, 1)[0] != '.' {
+	for getSerialBytes(port, 1)[0] != '.' {
 		wait()
 	}
 
-	response := string(getSerialBytes(serial, 2))
+	response := string(getSerialBytes(port, 2))
 	switch response {
 	case "pi":
-		raw := string(getSerialBytes(serial, 20))
+		raw := string(getSerialBytes(port, 20))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			return Garbage{"pi", raw}
 		}
-		return Ping{value: data[0]}
+		return Ping{value: int(data[0])}
 	case "po":
-		raw := string(getSerialBytes(serial, 20))
+		raw := string(getSerialBytes(port, 20))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			return Garbage{"po", raw}
 		}
-		return Pong{value: data[0]}
+		return Pong{value: int(data[0])}
 	case "gp":
-		raw := string(getSerialBytes(serial, 20))
+		raw := string(getSerialBytes(port, 20))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			return Garbage{"po", raw}
 		}
-		return GenePong{value: data[0]}
+		return GenePong{value: int(data[0])}
 	case "gA":
-		raw := string(getSerialBytes(serial, 20))
+		raw := string(getSerialBytes(port, 20))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			return Garbage{"po", raw}
 		}
-		return GeneAck{value: data[0]}
+		return GeneAck{value: int(data[0])}
 	case "RF":
-		a := string(getSerialBytes(serial, 4))
-		m := string(getSerialBytes(serial, 2))
-		r := string(getSerialBytes(serial, 16))
+		a := string(getSerialBytes(port, 4))
+		m := string(getSerialBytes(port, 2))
+		r := string(getSerialBytes(port, 16))
 		data, err := Decoder(append([]Field{}, Field{4, 2, "mark"}, Field{6, 16, "ref"}), a+m+r)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
@@ -140,57 +148,57 @@ func GetReply(serial *serial.Port) Reply {
 		fmt.Println(r)
 		return Ref{value: data[1]}
 	case "OK":
-		raw := string(getSerialBytes(serial, 20))
+		raw := string(getSerialBytes(port, 20))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			return Garbage{"OK", raw}
 		}
-		return Ack{value: data[0]}
+		return Ack{value: int(data[0])}
 	case "fr":
-		raw := string(getSerialBytes(serial, 400))
+		raw := string(getSerialBytes(port, 400))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}, Field{18, 2, "page"}, Field{20, 2, "index"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			return Garbage{"fr", raw}
 		}
 		fmt.Println(raw)
-		return Frame2{page: data[1], index: data[2], mark: data[0], blob: raw[22:][:256]}
+		return Frame2{page: int(data[1]), index: int(data[2]), mark: int(data[0]), blob: raw[22:][:256]}
 	case "ig":
-		raw := string(getSerialBytes(serial, 36))
+		raw := string(getSerialBytes(port, 36))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}, Field{18, 16, "id"}), raw)
 		if err != nil {
 			return Garbage{"fr", raw}
 		}
 		fmt.Println(raw)
-		return ID{mark: data[0], nanoid: data[1]}
+		return ID{mark: int(data[0]), nanoid: data[1]}
 	case "NO":
-		raw := string(getSerialBytes(serial, 8))
+		raw := string(getSerialBytes(port, 8))
 		data, err := Decoder(append([]Field{}, Field{4, 2, "mark"}), raw)
 		if err != nil {
 			return Garbage{"NO", raw}
 		}
-		return Ack{value: data[0]}
+		return Ack{value: int(data[0])}
 	case "ER":
-		raw := string(getSerialBytes(serial, 22))
+		raw := string(getSerialBytes(port, 22))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}), raw)
 		if err != nil {
 			return Garbage{"ERR", raw}
 		}
-		return Error{mark: data[0], message: GetPart(Field{18, 4, "msg"}, raw)}
+		return Error{mark: int(data[0]), message: GetPart(Field{18, 4, "msg"}, raw)}
 	default:
 		return Garbage{"other", response}
 	}
 }
 
-func _worker(ans bool, serial *serial.Port, packets []Packet) {
+func _worker(ans bool, port *serial.Port, packets []Packet) {
 
 	for _, packet := range packets {
 
-		PutMessage(serial, packet)
+		PutMessage(port, packet)
 
 		if ans {
 
-			reply := GetReply(serial)
+			reply := GetReply(port)
 
 			switch r := reply.(type) {
 			case Pong:
@@ -245,14 +253,14 @@ func measured(action func()) {
 	fmt.Printf("Worker executed %#v ", end)
 }
 
-func Worker(serial *serial.Port, packets []Packet) {
+func Worker(port *serial.Port, packets []Packet) {
 	measured(func() {
-		_worker(true, serial, packets)
+		_worker(true, port, packets)
 	})
 }
 
-func WorkerFin(serial *serial.Port, packets []Packet) {
+func WorkerFin(port *serial.Port, packets []Packet) {
 	measured(func() {
-		_worker(false, serial, packets)
+		_worker(false, port, packets)
 	})
 }

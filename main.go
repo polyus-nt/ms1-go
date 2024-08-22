@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go.bug.st/serial"
+	"go.bug.st/serial/enumerator"
 	"ms1-tool-go/internal"
 )
 
@@ -30,10 +30,18 @@ func main() {
 
 	fmt.Println("Start serial")
 
-	ports, _ := serial.GetPortsList()
+	ports, _ := enumerator.GetDetailedPortsList()
 	fmt.Println(ports)
-	serial := internal.MkSerial()
-	defer serial.Close()
+	for _, port := range ports {
+		fmt.Printf("Found port: %s\n", port.Name)
+		if port.IsUSB {
+			fmt.Printf("   USB ID     %s:%s\n", port.VID, port.PID)
+			fmt.Printf("   USB serial %s\n", port.SerialNumber)
+			fmt.Printf("   USB product %s\n", port.Product)
+		}
+	}
+	port := internal.MkSerial()
+	defer (*port).Close()
 
 	frames := internal.FileToFrames("data/fast_blink_main.bin")
 	frames = frames[:min(len(frames), 6*16)]
@@ -64,6 +72,6 @@ func main() {
 	packs = append(packs, peekFrames...)
 	packs = append(packs, internal.PacketMode(internal.ModeRun))
 
-	internal.Worker(serial, packs)
-	internal.WorkerFin(serial, []internal.Packet{internal.PacketResetSelf()})
+	internal.Worker(port, packs)
+	internal.WorkerFin(port, []internal.Packet{internal.PacketResetSelf()})
 }

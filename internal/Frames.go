@@ -44,8 +44,6 @@ func EncodeFrameLoad(frame Frame) string {
 	return buf.String()
 }
 
-var tf = Frame{}
-
 func EncodeFrame(frame Frame, addr Address, mark uint8) string {
 	var buf bytes.Buffer
 
@@ -111,15 +109,14 @@ func pageToFrames(pageIndex uint8, page string) []Frame {
 	return frames
 }
 
-func fileToFrames(filePath string) []Frame {
+func FileToFrames(filePath string) []Frame {
 
 	pages := fileToPages(filePath)
 	var frames []Frame
-	i := uint8(0)
 
-	for _, page := range pages {
+	for i, page := range pages {
 
-		frames = append(frames, pageToFrames(i, page)...)
+		frames = append(frames, pageToFrames(uint8(i), page)...)
 	}
 
 	return frames
@@ -131,7 +128,7 @@ func PrettyFrame(frame Frame) {
 }
 
 func Test1() {
-	frames := fileToFrames("data/test1.bin")
+	frames := FileToFrames("data/test1.bin")
 
 	for _, frame := range frames {
 		fmt.Printf("Frame %v.%v:\n", frame.page, frame.part)
