@@ -79,10 +79,15 @@ func CodePacket(packet Packet) string {
 	for _, l := range packet.Load {
 		data = append(data, codeLoad(l)...)
 	}
-	data = append(data, codeLoad(V{packet.Addr.val})...)
+	fmt.Println(string(data))
+	data = append(data, codeLoad(V{packet.Addr.Val})...)
+	fmt.Println(string(data))
 	data = append(data, codeLoad(N{int64(packet.Mark), 2})...)
+	fmt.Println(string(data))
 	data = append(data, packet.Code...)
+	fmt.Println(string(data))
 	data = append(data, ':')
+	fmt.Println(string(data))
 
 	return string(data)
 }

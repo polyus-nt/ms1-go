@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go.bug.st/serial/enumerator"
 	"ms1-tool-go/internal"
+	"os"
 )
 
 var start1 = []internal.Packet{
@@ -22,6 +23,8 @@ var jump = []internal.Packet{
 
 func main() {
 
+	//internal.Test1()
+
 	fmt.Println("Start serial")
 
 	ports, _ := enumerator.GetDetailedPortsList()
@@ -36,9 +39,26 @@ func main() {
 	}
 
 	port := internal.MkSerial()
+
+	setup := true
+	if setup {
+		internal.Worker(port, []internal.Packet{
+			internal.PacketGetId(7),
+			//internal.PacketSetId(5, 13286090),
+		})
+		internal.TestAddress = internal.LastAdrress
+	}
+	(*port).Close()
+
+	fmt.Printf("Address -> %v\n", internal.TestAddress)
+	fmt.Println("Ready. Reset board and press enter for continue...")
+	b := make([]byte, 1)
+	os.Stdin.Read(b)
+
+	port = internal.MkSerial()
 	defer (*port).Close()
 
-	frames := internal.FileToFrames("data/fast_blink_main.bin")
+	frames := internal.FileToFrames("data/usercode-mtrx.bin")
 	frames = frames[:min(len(frames), 6*16)]
 
 	var packets []internal.Packet
@@ -61,10 +81,10 @@ func main() {
 	packs = append(packs, packets...)
 
 	var peekFrames []internal.Packet
-	for i := 0; i < 16; i++ {
+	for i := 0; i <= 16; i++ {
 		peekFrames = append(peekFrames, internal.PacketTargetFrame(uint8(50+i), 0, int64(i)))
 	}
-	packs = append(packs, peekFrames...)
+	//packs = append(packs, peekFrames...)
 	packs = append(packs, internal.PacketMode(internal.ModeRun))
 
 	internal.Worker(port, packs)

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"fmt"
 	"go.bug.st/serial"
 	"log"
@@ -9,7 +10,8 @@ import (
 )
 
 const (
-	_Com string = "COM6"
+	_Com                   string = "COM6"
+	_deadlineSerialWaiting        = 5 * time.Millisecond
 )
 
 // general type (for enum impl)
@@ -43,7 +45,7 @@ type Error struct {
 }
 
 func wait() {
-	time.Sleep(3 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 }
 
 func MkSerial() *serial.Port {
@@ -84,6 +86,7 @@ func getSerialBytes(port *serial.Port, count int) []byte {
 	buffer := make([]byte, count)
 	ready := 0
 	bArr := buffer
+	deadline := time.Now().Add(_deadlineSerialWaiting)
 
 	for {
 		qBytes, err := (*port).Read(buffer)
@@ -94,10 +97,13 @@ func getSerialBytes(port *serial.Port, count int) []byte {
 		if ready >= count {
 			break
 		}
+		if time.Now().After(deadline) {
+			break
+		}
 		buffer = buffer[qBytes:]
 	}
 
-	return bArr
+	return bArr[:ready]
 }
 
 func GetReply(port *serial.Port) Reply {
@@ -160,6 +166,7 @@ func GetReply(port *serial.Port) Reply {
 		return Ack{value: int(data[0])}
 	case "fr":
 		raw := string(getSerialBytes(port, 400))
+		fmt.Printf("Get %v bytes for FRAME2\n", len(raw))
 		data, err := Decoder(append([]Field{}, Field{16, 2, "mark"}, Field{18, 2, "page"}, Field{20, 2, "index"}), raw)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
@@ -174,6 +181,7 @@ func GetReply(port *serial.Port) Reply {
 			return Garbage{"fr", raw}
 		}
 		fmt.Println(raw)
+		//TestAddress = Address{raw[18 : 18+16]} // TEMP
 		return ID{mark: int(data[0]), nanoid: data[1]}
 	case "NO":
 		raw := string(getSerialBytes(port, 8))
@@ -223,10 +231,24 @@ func _worker(ans bool, port *serial.Port, packets []Packet) {
 			case Frame2:
 				fmt.Printf("Frame [ %#x ] %v.%v\n", r.mark, r.page, r.index)
 				var bin []Bin
-				for i := 0; i < len(r.blob); i += 16 {
-					rI := min(i+16, len(r.blob))
-					bin = append(bin, Bin(r.blob[i:rI]))
+
+				remains := []byte(r.blob)
+				for len(remains) > 0 {
+					I := max(len(remains)-16, 0)
+					qword := remains[I:]
+					var res [][]byte
+					for i := len(qword) - 2; i >= 0; i -= 2 {
+						res = append(res, qword[i:i+2])
+					}
+					bin = append(bin, Bin(bytes.Join(res, []byte(""))))
+					remains = remains[:I]
 				}
+				/*
+					for i := 0; i < len(r.blob); i += 16 {
+						rI := min(i+16, len(r.blob))
+						bin = append(bin, Bin(r.blob[i:rI]))
+					}
+				*/
 				Xxd(bin)
 				wait()
 			case Ref:
@@ -237,6 +259,7 @@ func _worker(ans bool, port *serial.Port, packets []Packet) {
 				wait()
 			case ID:
 				fmt.Printf("Got id [%#x]: %#x\n", r.mark, r.nanoid)
+				LastAdrress.Val = fmt.Sprintf("%x", r.nanoid)
 				wait()
 			case Error:
 				fmt.Printf("Got error [%#x] \"%v\"\n", r.mark, r.message)

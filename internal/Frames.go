@@ -9,12 +9,13 @@ import (
 )
 
 type Address struct {
-	val string
+	Val string
 }
 
 //goland:noinspection SpellCheckingInspection
-var TestAddress = Address{"facedeadbeef0000"}
+var TestAddress = Address{"0000000000cabaca"}
 var ZeroAddress = Address{"0000000000000000"}
+var LastAdrress = Address{ZeroAddress.Val}
 
 type Frame struct {
 	page uint8
@@ -38,8 +39,12 @@ func EncodeFrameLoad(frame Frame) string {
 	buf.Reset()
 	buf.WriteString(encoded)
 
-	fmt.Fprintf(&buf, "%d", frame.page)
-	fmt.Fprintf(&buf, "%d", frame.part)
+	fmt.Println(buf.String())
+
+	fmt.Fprintf(&buf, "%s", enc([]byte{frame.page}))
+	fmt.Fprintf(&buf, "%s", enc([]byte{frame.part}))
+
+	fmt.Println(buf.String())
 
 	return buf.String()
 }
@@ -50,7 +55,7 @@ func EncodeFrame(frame Frame, addr Address, mark uint8) string {
 	buf.WriteString(frame.blob)
 	buf.WriteString(string(frame.page))
 	buf.WriteString(string(frame.part))
-	buf.WriteString(addr.val)
+	buf.WriteString(addr.Val)
 	buf.WriteString(string(mark))
 	encoded := enc(buf.Bytes())
 
@@ -68,12 +73,12 @@ var sizeFrame int = 128
 func chopBs(size int, data string) []string {
 
 	res := make([]string, 0, (len(data)+size)/size)
-
+	fmt.Println(len(data))
 	for i := 0; i < len(data); i += size {
 		if i+size < len(data) {
 			res = append(res, data[i:i+size])
 		} else {
-			str := make([]byte, 0, size)
+			str := make([]byte, size)
 			remains := copy(str, data[i:])
 			for i := remains; i < len(str); i++ {
 				str[i] = '\x00'
