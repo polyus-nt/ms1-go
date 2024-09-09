@@ -1,6 +1,7 @@
-package internal
+package xxd
 
 import (
+	"bytes"
 	"fmt"
 )
 
@@ -25,24 +26,34 @@ var TestData = []Bin{
 	"00000000080058a9",
 }
 
-func PrintOneChunk(bin Bin) {
+func PrintOneChunk(bin Bin) string {
+
+	buf := bytes.Buffer{}
+
 	i := 0
 	for i < len(bin) {
 		remains := min(i+4, len(bin))
 		if remains-i > 2 {
-			fmt.Printf("%v ", bin[i:remains])
+			buf.WriteString(fmt.Sprintf("%v ", bin[i:remains]))
 		}
 		i = remains
 	}
+
+	return buf.String()
 }
 
-func Xxd(bin []Bin) {
+func Xxd(bin []Bin) string {
+
+	buf := bytes.Buffer{}
+
 	num := 0
 	for i := 1; i < len(bin); i += 2 {
-		fmt.Printf("%08x: ", num*16)
-		PrintOneChunk(bin[i-1])
-		PrintOneChunk(bin[i])
+		buf.WriteString(fmt.Sprintf("%08x: ", num*16))
+		buf.WriteString(PrintOneChunk(bin[i-1]))
+		buf.WriteString(PrintOneChunk(bin[i]))
 		num++
-		fmt.Println()
+		buf.WriteByte('\n')
 	}
+
+	return buf.String()
 }
