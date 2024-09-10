@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"ms1-tool-go/internal/config"
+	"ms1-tool-go/internal/io/entity"
 )
 
 func PacketPing(m uint8, addr Address) Packet {
@@ -54,9 +55,9 @@ func PacketTargetFrame(m uint8, p, i int64, addr Address) Packet {
 	return Packet{Mark: m, Addr: addr, Code: "rf", Load: append([]Load{}, N{p, 2}, N{i, 2})}
 }
 
-func PacketMode(mode Mode, addr Address) Packet {
+func PacketMode(m uint8, mode Mode, addr Address) Packet {
 
-	return Packet{Mark: 0, Addr: addr, Code: "st", Load: append([]Load{}, N{int64(mode), 2})}
+	return Packet{Mark: m, Addr: addr, Code: "st", Load: append([]Load{}, N{int64(mode), 2})}
 }
 
 func PacketSetId(m uint8, w int64, addr Address) Packet {
@@ -67,4 +68,15 @@ func PacketSetId(m uint8, w int64, addr Address) Packet {
 func PacketGetId(m uint8, addr Address) Packet {
 
 	return Packet{Mark: m, Addr: config.ZeroAddress, Code: "ig", Load: []Load{}}
+}
+
+func File2Frames2Packets(filePath string, startMark uint8, addr Address) (packets []Packet) {
+
+	frames := FileToFrames(filePath)
+
+	for i, frame := range frames {
+		packets = append(packets, Packet{Mark: startMark + uint8(i), Addr: addr, Code: "fr", Load: []entity.Load{F{Frame: frame}}})
+	}
+
+	return
 }

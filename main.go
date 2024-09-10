@@ -27,6 +27,7 @@ func main() {
 	}
 
 	port := ms1tool.MkSerial(ports[usrInput-1])
+	defer port.Close()
 
 	device := ms1tool.NewDevice(port)
 	fmt.Printf("Device created: %v\n", device)
@@ -49,4 +50,16 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Println(ping)
+
+	// Процесс прошивки платы
+	fileName := "data/fast_blink_main.bin"
+	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
+	firmware, err := device.WriteFirmware(fileName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(firmware)
+
+	fmt.Println("Finished!")
 }

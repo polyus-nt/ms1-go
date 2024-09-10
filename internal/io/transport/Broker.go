@@ -22,7 +22,7 @@ func PutMessage(port io.Writer, packet presentation.Packet) {
 	fmt.Printf("Serial write %v bytes\n", write)
 }
 
-// getSerialBytes считывает требуемое количество байт с порта
+// GetSerialBytes считывает требуемое количество байт с порта
 func GetSerialBytes(port io.Reader, count int) []byte {
 
 	buffer := make([]byte, count)
