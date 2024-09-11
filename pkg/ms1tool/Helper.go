@@ -5,16 +5,20 @@ import (
 	"io"
 	"ms1-tool-go/internal/io/presentation"
 	"ms1-tool-go/internal/io/transport"
+	"time"
 )
 
 // GetReply считывает байты с порта и формирует сообщение
 func getReply(port io.Reader) Reply {
 
+	timer := time.Now()
 	for transport.GetSerialBytes(port, 1)[0] != '.' {
 		transport.Wait()
 	}
+	fmt.Printf("Elapsed1: %v\n", time.Since(timer))
 
 	response := string(transport.GetSerialBytes(port, 2))
+	fmt.Printf("Elapsed2: %v\n", time.Since(timer))
 
 	switch response {
 
@@ -63,7 +67,9 @@ func getReply(port io.Reader) Reply {
 		}
 		return Ack{Value: int(data[0])}
 	case "fr":
+		timer = time.Now()
 		raw := string(transport.GetSerialBytes(port, 400))
+		fmt.Printf("Elapsed3: %v\n", time.Since(timer))
 		data, err := presentation.Decoder([]presentation.Field{{16, 2, "mark"}, {18, 2, "page"}, {20, 2, "index"}}, raw)
 		if err != nil {
 			return Garbage{Comment: "fr", Garbage: fmt.Sprintf("%v { error: %v }\n", raw, err)}

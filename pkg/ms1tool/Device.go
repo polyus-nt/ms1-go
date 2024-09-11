@@ -114,22 +114,12 @@ func (d *Device) WriteFirmware(fileName string) (res []Reply, err error) {
 	packs := presentation.File2Frames2Packets(fileName, d.mark, d.addr)
 	d.mark += uint8(len(packs)) // Shift to mark len(Packets)
 
-	//temp
-	worker(d.port, []presentation.Packet{presentation.PacketMode(d.getMark(), entity.ModeConf, d.addr)})
-
-	// temp
-	worker(d.port, []presentation.Packet{presentation.PacketMode(d.getMark(), entity.ModeProg, config.ZeroAddress)})
-
 	// Перевод в режим программирования
 	mode, err := d.changeMode(entity.ModeProg) // TODO: maybe additional modeConf or modeProg for target
 	res = append(res, mode...)
 	if err != nil {
 		return
 	}
-
-	//temp
-	worker(d.port, []presentation.Packet{presentation.PacketResetTarget(d.getMark(), d.addr)})
-	worker(d.port, []presentation.Packet{presentation.PacketPingTarget(d.getMark(), d.addr)})
 
 	// ping device
 	ping, err = d.Ping()
@@ -183,8 +173,24 @@ func (d *Device) changeMode(mode entity.Mode) (res []Reply, err error) {
 	return
 }
 
-func (d *Device) Reset() {
+// Reset - сброс кибергена. Это действие влечет за собой сброс bootloader-a
+func (d *Device) Reset(resetMark bool) {
 
+	packs := []presentation.Packet{presentation.PacketResetSelf(d.addr)}
+
+	workerNoReply(d.port, packs)
+
+	if resetMark {
+		d.mark = 0
+	}
+}
+
+// ResetTarget - сброс bootloader-a (пользовательский микроконтроллер)
+func (d *Device) ResetTarget() (res []Reply, err error) {
+
+	packs := []presentation.Packet{presentation.PacketResetTarget(d.getMark(), d.addr)}
+
+	return worker(d.port, packs)
 }
 
 // erasePages - очищает нужное количество страниц flash памяти для будущей прошивки
@@ -209,15 +215,16 @@ func (d *Device) getFrame(lenFrames int) (res []Reply, err error) {
 		return
 	}
 	IFrame := func(i int) (res int64) {
-		wholePart := i / config.SIZE_PAGE
-		i -= config.SIZE_PAGE * wholePart
-		res = int64(i) % config.SIZE_FRAME
+		qPages := int(IPage(i))
+		res = int64((i*config.SIZE_FRAME - qPages*config.SIZE_PAGE) / config.SIZE_FRAME)
 		return
 	}
 
 	var packs []presentation.Packet
 
 	for i := 0; i < lenFrames; i++ {
+		fmt.Printf("IPage(%v) = %v\n", i, IPage(i))
+		fmt.Printf("IFrame(%v) = %v\n", i, IFrame(i))
 		packs = append(packs, presentation.PacketTargetFrame(d.getMark(),
 			IPage(i), IFrame(i), d.addr))
 	}
@@ -242,7 +249,16 @@ func (d *Device) verifyFirmware(expected []presentation.Packet, suspected []Repl
 		if !ok {
 			return false, fmt.Errorf("error read suspectFrame[%v] -> type mismath (expected: Frame2; received: %T)", i, suspected[i])
 		}
-		if expectedFrame.Frame.Blob != suspectedFrame.Blob {
+
+		//fmt.Println(expectedFrame.Frame.Blob)
+		encoded := presentation.EncodeFrameLoad(expectedFrame.Frame)
+		encoded = string(encoded[:len(encoded)-4])
+		//fmt.Println(encoded)
+
+		//fmt.Println(suspectedFrame.Blob)
+		//fmt.Println(encoded == suspectedFrame.Blob)
+
+		if encoded != suspectedFrame.Blob {
 			return false, fmt.Errorf("frame[%v] data not match", i)
 		}
 	}

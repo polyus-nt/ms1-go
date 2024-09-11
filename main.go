@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"ms1-tool-go/pkg/ms1tool"
+	"os"
 	"sort"
 )
 
@@ -52,7 +53,7 @@ func main() {
 	fmt.Println(ping)
 
 	// Процесс прошивки платы
-	fileName := "data/fast_blink_main.bin"
+	fileName := "data/usercode-mtrx.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
 	firmware, err := device.WriteFirmware(fileName)
 	if err != nil {
@@ -60,6 +61,17 @@ func main() {
 		return
 	}
 	fmt.Println(firmware)
+
+	// check reset functions
+	os.Stdin.Read(make([]byte, 1))
+	device.Reset(true)
+
+	os.Stdin.Read(make([]byte, 1))
+	resetTarget, err := device.ResetTarget()
+	if err != nil {
+		return
+	}
+	fmt.Println(resetTarget)
 
 	fmt.Println("Finished!")
 }
