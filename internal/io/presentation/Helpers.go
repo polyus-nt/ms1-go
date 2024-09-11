@@ -3,8 +3,8 @@ package presentation
 import (
 	"encoding/hex"
 	"fmt"
-	"ms1-go/internal/io/entity"
-	"ms1-go/internal/xxd"
+	"github.com/polyus-nt/ms1-go/internal/io/entity"
+	"github.com/polyus-nt/ms1-go/internal/xxd"
 	"os"
 	"strconv"
 )

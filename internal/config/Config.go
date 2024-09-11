@@ -1,7 +1,7 @@
 package config
 
 import (
-	"ms1-go/internal/io/entity"
+	"github.com/polyus-nt/ms1-go/internal/io/entity"
 	"time"
 )
 

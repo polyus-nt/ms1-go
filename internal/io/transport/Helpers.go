@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"ms1-go/internal/config"
+	"github.com/polyus-nt/ms1-go/internal/config"
 	"time"
 )
 

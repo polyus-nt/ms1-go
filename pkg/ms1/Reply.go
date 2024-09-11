@@ -3,7 +3,7 @@ package ms1
 import (
 	"bytes"
 	"fmt"
-	"ms1-go/internal/xxd"
+	"github.com/polyus-nt/ms1-go/internal/xxd"
 )
 
 // Reply - тип интерфейс для проброса ответа пользователю

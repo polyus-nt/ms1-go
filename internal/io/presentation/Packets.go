@@ -1,8 +1,8 @@
 package presentation
 
 import (
-	"ms1-go/internal/config"
-	"ms1-go/internal/io/entity"
+	"github.com/polyus-nt/ms1-go/internal/config"
+	"github.com/polyus-nt/ms1-go/internal/io/entity"
 )
 
 func PacketPing(m uint8, addr Address) Packet {

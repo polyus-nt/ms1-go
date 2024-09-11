@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/polyus-nt/ms1-go/pkg/ms1"
 	"log"
-	"ms1-go/pkg/ms1"
 	"os"
 	"sort"
 )

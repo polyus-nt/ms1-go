@@ -2,10 +2,10 @@ package transport
 
 import (
 	"fmt"
+	"github.com/polyus-nt/ms1-go/internal/config"
+	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"io"
 	"log"
-	"ms1-go/internal/config"
-	"ms1-go/internal/io/presentation"
 	"time"
 )
 

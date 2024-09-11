@@ -2,10 +2,10 @@ package ms1
 
 import (
 	"fmt"
+	"github.com/polyus-nt/ms1-go/internal/config"
+	"github.com/polyus-nt/ms1-go/internal/io/entity"
+	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"io"
-	"ms1-go/internal/config"
-	"ms1-go/internal/io/entity"
-	"ms1-go/internal/io/presentation"
 	"strconv"
 )
 

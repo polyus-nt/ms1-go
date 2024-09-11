@@ -1,10 +1,8 @@
-module ms1-go
+module github.com/polyus-nt/ms1-go
 
 go 1.23.0
 
-require (
-	go.bug.st/serial v1.6.2
-)
+require go.bug.st/serial v1.6.2
 
 require (
 	github.com/creack/goselect v0.1.2 // indirect

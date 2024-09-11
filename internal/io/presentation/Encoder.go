@@ -3,7 +3,7 @@ package presentation
 import (
 	"bytes"
 	"fmt"
-	"ms1-go/internal/config"
+	"github.com/polyus-nt/ms1-go/internal/config"
 	"os"
 	"slices"
 	"strconv"
