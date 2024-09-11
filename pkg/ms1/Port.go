@@ -1,4 +1,4 @@
-package ms1tool
+package ms1
 
 import (
 	"fmt"

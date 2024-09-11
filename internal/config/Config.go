@@ -1,7 +1,7 @@
 package config
 
 import (
-	"ms1-tool-go/internal/io/entity"
+	"ms1-go/internal/io/entity"
 	"time"
 )
 

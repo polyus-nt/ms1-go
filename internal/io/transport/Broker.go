@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"ms1-tool-go/internal/config"
-	"ms1-tool-go/internal/io/presentation"
+	"ms1-go/internal/config"
+	"ms1-go/internal/io/presentation"
 	"time"
 )
 

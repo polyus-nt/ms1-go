@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"ms1-tool-go/internal/config"
+	"ms1-go/internal/config"
 	"time"
 )
 

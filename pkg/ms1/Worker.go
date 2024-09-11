@@ -1,10 +1,10 @@
-package ms1tool
+package ms1
 
 import (
 	"fmt"
 	"io"
-	"ms1-tool-go/internal/io/presentation"
-	"ms1-tool-go/internal/io/transport"
+	"ms1-go/internal/io/presentation"
+	"ms1-go/internal/io/transport"
 )
 
 func worker(port io.ReadWriter, packets []presentation.Packet) (res []Reply, err error) {

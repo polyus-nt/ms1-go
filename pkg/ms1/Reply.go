@@ -1,9 +1,9 @@
-package ms1tool
+package ms1
 
 import (
 	"bytes"
 	"fmt"
-	"ms1-tool-go/internal/xxd"
+	"ms1-go/internal/xxd"
 )
 
 // Reply - тип интерфейс для проброса ответа пользователю

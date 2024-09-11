@@ -1,11 +1,11 @@
-package ms1tool
+package ms1
 
 import (
 	"fmt"
 	"io"
-	"ms1-tool-go/internal/config"
-	"ms1-tool-go/internal/io/entity"
-	"ms1-tool-go/internal/io/presentation"
+	"ms1-go/internal/config"
+	"ms1-go/internal/io/entity"
+	"ms1-go/internal/io/presentation"
 	"strconv"
 )
 

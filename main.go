@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"ms1-tool-go/pkg/ms1tool"
+	"ms1-go/pkg/ms1"
 	"os"
 	"sort"
 )
@@ -12,7 +12,7 @@ func main() {
 
 	fmt.Println("Start serial")
 
-	ports := ms1tool.PortList()
+	ports := ms1.PortList()
 	sort.Strings(ports)
 
 	fmt.Println("Available ports:")
@@ -27,10 +27,10 @@ func main() {
 		_ = fmt.Errorf("Error input for port: %v\n", err)
 	}
 
-	port := ms1tool.MkSerial(ports[usrInput-1])
+	port := ms1.MkSerial(ports[usrInput-1])
 	defer port.Close()
 
-	device := ms1tool.NewDevice(port)
+	device := ms1.NewDevice(port)
 	fmt.Printf("Device created: %v\n", device)
 
 	ping, err := device.Ping()
@@ -53,7 +53,7 @@ func main() {
 	fmt.Println(ping)
 
 	// Процесс прошивки платы
-	fileName := "data/usercode-mtrx.bin"
+	fileName := "data/main.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
 	firmware, err := device.WriteFirmware(fileName)
 	if err != nil {

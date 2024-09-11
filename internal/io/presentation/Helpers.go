@@ -3,8 +3,8 @@ package presentation
 import (
 	"encoding/hex"
 	"fmt"
-	"ms1-tool-go/internal/io/entity"
-	"ms1-tool-go/internal/xxd"
+	"ms1-go/internal/io/entity"
+	"ms1-go/internal/xxd"
 	"os"
 	"strconv"
 )

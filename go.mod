@@ -1,4 +1,4 @@
-module ms1-tool-go
+module ms1-go
 
 go 1.23.0
 

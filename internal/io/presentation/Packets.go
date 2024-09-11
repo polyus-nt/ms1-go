@@ -1,8 +1,8 @@
 package presentation
 
 import (
-	"ms1-tool-go/internal/config"
-	"ms1-tool-go/internal/io/entity"
+	"ms1-go/internal/config"
+	"ms1-go/internal/io/entity"
 )
 
 func PacketPing(m uint8, addr Address) Packet {

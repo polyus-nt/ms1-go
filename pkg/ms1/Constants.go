@@ -1,4 +1,4 @@
-package ms1tool
+package ms1
 
 type ReplyStatus = uint8
 
@@ -18,4 +18,4 @@ const (
 )
 
 // TODO: add map with device info by REF_ID (MDI)
-// TODO: add iota generator const for nanoid about devices (and use later as key for map with ms1tool info (MDI))
+// TODO: add iota generator const for nanoid about devices (and use later as key for map with ms1 info (MDI))
