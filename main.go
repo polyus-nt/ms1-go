@@ -32,6 +32,7 @@ func main() {
 
 	device := ms1.NewDevice(port)
 	fmt.Printf("Device created: %v\n", device)
+	fmt.Printf("Device address: %v\n", device.GetAddress())
 
 	ping, err := device.Ping()
 	if err != nil {
@@ -45,6 +46,7 @@ func main() {
 	}
 	fmt.Printf("Device id updated -> %v\n", id)
 	fmt.Println(device)
+	fmt.Printf("Device address: %v\n", device.GetAddress())
 
 	ping, err = device.Ping()
 	if err != nil {

@@ -26,6 +26,10 @@ func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
 }
 
+func (d *Device) GetAddress() string {
+	return "0x" + d.addr.Val
+}
+
 func (d *Device) getMark() uint8 {
 
 	res := d.mark
