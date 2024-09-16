@@ -60,12 +60,12 @@ func PacketMode(m uint8, mode Mode, addr Address) Packet {
 	return Packet{Mark: m, Addr: addr, Code: "st", Load: append([]Load{}, N{int64(mode), 2})}
 }
 
-func PacketSetId(m uint8, w int64, addr Address) Packet {
+func PacketSetId(m uint8, newID string, addr Address) Packet {
 
-	return Packet{Mark: m, Addr: config.ZeroAddress, Code: "id", Load: append([]Load{}, N{w, 16})}
+	return Packet{Mark: m, Addr: addr, Code: "id", Load: append([]Load{}, V{newID})}
 }
 
-func PacketGetId(m uint8, addr Address) Packet {
+func PacketGetId(m uint8) Packet {
 
 	return Packet{Mark: m, Addr: config.ZeroAddress, Code: "ig", Load: []Load{}}
 }

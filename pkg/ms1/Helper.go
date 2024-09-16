@@ -77,11 +77,11 @@ func getReply(port io.Reader) Reply {
 		return Frame2{Page: int(data[1]), Index: int(data[2]), Mark: int(data[0]), Blob: raw[22:][:256]}
 	case "ig":
 		raw := string(transport.GetSerialBytes(port, 36))
-		data, err := presentation.Decoder([]presentation.Field{{16, 2, "mark"}, {18, 16, "id"}}, raw)
+		data, err := presentation.Decoder([]presentation.Field{{16, 2, "mark"}}, raw)
 		if err != nil {
 			return Garbage{Comment: "fr", Garbage: fmt.Sprintf("%v { error: %v }\n", raw, err)}
 		}
-		return ID{Mark: int(data[0]), Nanoid: data[1]}
+		return ID{Mark: int(data[0]), Nanoid: raw[18 : 18+16]}
 	case "NO":
 		raw := string(transport.GetSerialBytes(port, 8))
 		data, err := presentation.Decoder([]presentation.Field{{4, 2, "mark"}}, raw)

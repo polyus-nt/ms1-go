@@ -77,11 +77,11 @@ func (r Ref) GetStatus() ReplyStatus {
 
 type ID struct {
 	Mark   int
-	Nanoid int64
+	Nanoid string
 }
 
 func (id ID) String() string {
-	return fmt.Sprintf("ID [ %#x ] : [ %#x ]", id.Mark, id.Nanoid)
+	return fmt.Sprintf("ID [ %#x ] : [ 0x%v ]", id.Mark, id.Nanoid)
 }
 func (id ID) GetStatus() ReplyStatus {
 	return REPLY_ID

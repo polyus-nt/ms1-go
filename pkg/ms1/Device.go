@@ -6,7 +6,6 @@ import (
 	"github.com/polyus-nt/ms1-go/internal/io/entity"
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"io"
-	"strconv"
 )
 
 type Device struct {
@@ -59,7 +58,7 @@ func (d *Device) Ping() (res Reply, err error) {
 
 func (d *Device) GetId(updateID, exitConfMode bool) (res []Reply, err error, updated bool) {
 
-	packs := []presentation.Packet{presentation.PacketGetId(d.getMark(), d.addr)}
+	packs := []presentation.Packet{presentation.PacketGetId(d.getMark())}
 
 	resT, err := worker(d.port, packs)
 	if err != nil {
@@ -78,7 +77,7 @@ func (d *Device) GetId(updateID, exitConfMode bool) (res []Reply, err error, upd
 	if updateID {
 
 		if id, ok := res[0].(ID); ok {
-			d.addr = entity.Address{Val: intToID(id.Nanoid)}
+			d.addr = entity.Address{Val: id.Nanoid}
 			updated = true
 		}
 	}
@@ -88,16 +87,11 @@ func (d *Device) GetId(updateID, exitConfMode bool) (res []Reply, err error, upd
 
 func (d *Device) SetId(id string) (res []Reply, err error) {
 
-	if len(id) < 16 {
+	if len(id) != 16 {
 		return nil, fmt.Errorf("ID not correct! (len(ID) != 16), expected len: %v; id: %v", len(id), id)
 	}
 
-	idInt, err := strconv.ParseInt(id, 16, 64)
-	if err != nil {
-		return
-	}
-
-	res, err = worker(d.port, []presentation.Packet{presentation.PacketSetId(d.getMark(), idInt, d.addr)})
+	res, err = worker(d.port, []presentation.Packet{presentation.PacketSetId(d.getMark(), id, d.addr)})
 	if err == nil {
 		d.addr = entity.Address{Val: id}
 	}
