@@ -1,11 +1,9 @@
 package transport
 
 import (
-	"fmt"
 	"github.com/polyus-nt/ms1-go/internal/config"
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"io"
-	"log"
 	"time"
 )
 
@@ -14,16 +12,16 @@ func PutMessage(port io.Writer, packet presentation.Packet) {
 
 	var code = presentation.CodePacket(packet)
 
-	fmt.Printf("Msg -> %v\n", code)
-	write, err := port.Write([]byte(code))
+	//fmt.Printf("Msg -> %v\n", code)
+	_, err := port.Write([]byte(code))
 	if err != nil {
-		log.Fatalln(err)
+		return
 	}
-	fmt.Printf("Serial write %v bytes\n", write)
+	//fmt.Printf("Serial write %v bytes\n", write)
 }
 
 // GetSerialBytes считывает требуемое количество байт с порта
-func GetSerialBytes(port io.Reader, count int) []byte {
+func GetSerialBytes(port io.Reader, count int) (string, error) {
 
 	buffer := make([]byte, count)
 	ready := 0
@@ -33,7 +31,7 @@ func GetSerialBytes(port io.Reader, count int) []byte {
 	for {
 		qBytes, err := port.Read(buffer)
 		if err != nil {
-			log.Fatalln(err)
+			return "", err
 		}
 		ready += qBytes
 		if ready >= count {
@@ -45,5 +43,5 @@ func GetSerialBytes(port io.Reader, count int) []byte {
 		buffer = buffer[qBytes:]
 	}
 
-	return bArr[:ready]
+	return string(bArr[:ready]), nil
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+//goland:noinspection ALL
 const (
 	SIZE_PAGE          = 2048
 	SIZE_FRAME         = 128

@@ -5,7 +5,6 @@ import (
 	"github.com/polyus-nt/ms1-go/pkg/ms1"
 	"log"
 	"os"
-	"sort"
 )
 
 func main() {
@@ -13,7 +12,6 @@ func main() {
 	fmt.Println("Start serial")
 
 	ports := ms1.PortList()
-	sort.Strings(ports)
 
 	fmt.Println("Available ports:")
 	for i, port := range ports {
@@ -27,7 +25,10 @@ func main() {
 		_ = fmt.Errorf("Error input for port: %v\n", err)
 	}
 
-	port := ms1.MkSerial(ports[usrInput-1])
+	port, err := ms1.MkSerial(ports[usrInput-1])
+	if err != nil {
+		log.Fatalln(err)
+	}
 	defer port.Close()
 
 	device := ms1.NewDevice(port)
@@ -40,9 +41,9 @@ func main() {
 	}
 	fmt.Println(ping)
 
-	id, err, b := device.GetId(true, true)
-	if err != nil || b == false {
-		log.Fatalf("Error get id { error: %v, isUpdateID: %v}\n", err, b)
+	id, err, updated := device.GetId(true, true)
+	if err != nil || updated == false {
+		log.Fatalf("Error get id { error: %v, isIDUpdated: %v}\n", err, updated)
 	}
 	fmt.Printf("Device id updated -> %v\n", id)
 	fmt.Println(device)
@@ -57,21 +58,22 @@ func main() {
 	// Процесс прошивки платы
 	fileName := "data/main.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
-	firmware, err := device.WriteFirmware(fileName)
+	firmware, err := device.WriteFirmware(fileName, true)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalln(err)
 	}
 	fmt.Println(firmware)
 
 	// check reset functions
-	os.Stdin.Read(make([]byte, 1))
+	fmt.Println("Enter for reset device")
+	_, _ = os.Stdin.Read(make([]byte, 1))
 	device.Reset(true)
 
-	os.Stdin.Read(make([]byte, 1))
+	fmt.Println("Enter for reset target in device")
+	_, _ = os.Stdin.Read(make([]byte, 1))
 	resetTarget, err := device.ResetTarget()
 	if err != nil {
-		return
+		log.Fatalln(err)
 	}
 	fmt.Println(resetTarget)
 

@@ -14,6 +14,7 @@ func worker(port io.ReadWriter, packets []presentation.Packet) (res []Reply, err
 		transport.PutMessage(port, packet)
 
 		reply := getReply(port)
+		// TODO: impl recover (for interrupt serial problems, how it resolve and how update state device?)
 
 		res = append(res, reply)
 

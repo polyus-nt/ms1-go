@@ -99,7 +99,7 @@ func (d *Device) SetId(id string) (res []Reply, err error) {
 	return
 }
 
-func (d *Device) WriteFirmware(fileName string) (res []Reply, err error) {
+func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []Reply, err error) {
 
 	// ping device
 	ping, err := d.Ping()
@@ -109,11 +109,14 @@ func (d *Device) WriteFirmware(fileName string) (res []Reply, err error) {
 	}
 
 	// Открытие прошивки и формирование пакетов
-	packs := presentation.File2Frames2Packets(fileName, d.mark, d.addr)
+	packs, err := presentation.File2Frames2Packets(fileName, d.mark, d.addr)
+	if err != nil {
+		return
+	}
 	d.mark += uint8(len(packs)) // Shift to mark len(Packets)
 
 	// Перевод в режим программирования
-	mode, err := d.changeMode(entity.ModeProg) // TODO: maybe additional modeConf or modeProg for target
+	mode, err := d.changeMode(entity.ModeProg)
 	res = append(res, mode...)
 	if err != nil {
 		return
@@ -121,14 +124,13 @@ func (d *Device) WriteFirmware(fileName string) (res []Reply, err error) {
 
 	// ping device
 	ping, err = d.Ping()
-	fmt.Println(ping)
 	res = append(res, ping)
 	if err != nil {
 		return
 	}
 
 	// Очистка страниц
-	pages, err := d.erasePages(len(packs)) // TODO: Совпадает ли количество фреймов с количеством пакетов?
+	pages, err := d.erasePages(len(packs)) // len(packs) must be equal to len(frames)
 	res = append(res, pages...)
 	if err != nil {
 		return
@@ -141,20 +143,25 @@ func (d *Device) WriteFirmware(fileName string) (res []Reply, err error) {
 		return
 	}
 
-	// Проверка целостности загруженной прошивки
-	suspectFrames, err := d.getFrame(len(packs)) // Подтянули записанный код прошивки
-	if err != nil {
-		return
-	}
-	ok, err := d.verifyFirmware(packs, suspectFrames)
-	if err != nil || !ok {
-		_ = fmt.Errorf("the firmware is loaded incorrectly (%v)", err)
-		return
+	// Проверка целостности загруженной прошивки (опционально)
+	if checkFlashFirmware {
+		suspectFrames, err := d.getFrames(len(packs)) // Подтянули записанный код прошивки
+		if err != nil {
+			err = fmt.Errorf("device::WriteFirmware warning: failed loading frames from flash memory mk (%v)", err)
+		} else {
+			ok, err := d.verifyFirmware(packs, suspectFrames)
+			if err != nil || !ok {
+				err = fmt.Errorf("device::WriteFirmware warning: the firmware is loaded incorrectly (%v)", err)
+			}
+		}
 	}
 
 	// Перевод в режим Run
-	mode, err = d.changeMode(entity.ModeRun)
+	mode, err2 := d.changeMode(entity.ModeRun)
 	res = append(res, mode...)
+	if err == nil {
+		err = err2
+	}
 
 	return
 }
@@ -206,7 +213,7 @@ func (d *Device) erasePages(lenFrames int) (res []Reply, err error) {
 	return
 }
 
-func (d *Device) getFrame(lenFrames int) (res []Reply, err error) {
+func (d *Device) getFrames(lenFrames int) (res []Reply, err error) {
 
 	IPage := func(i int) (res int64) {
 		res = int64(i) * config.SIZE_FRAME / config.SIZE_PAGE
@@ -221,8 +228,6 @@ func (d *Device) getFrame(lenFrames int) (res []Reply, err error) {
 	var packs []presentation.Packet
 
 	for i := 0; i < lenFrames; i++ {
-		fmt.Printf("IPage(%v) = %v\n", i, IPage(i))
-		fmt.Printf("IFrame(%v) = %v\n", i, IFrame(i))
 		packs = append(packs, presentation.PacketTargetFrame(d.getMark(),
 			IPage(i), IFrame(i), d.addr))
 	}
@@ -235,7 +240,7 @@ func (d *Device) getFrame(lenFrames int) (res []Reply, err error) {
 func (d *Device) verifyFirmware(expected []presentation.Packet, suspected []Reply) (ok bool, err error) {
 
 	if len(expected) != len(suspected) {
-		return false, fmt.Errorf("error in 'verifyFirmware': len(expected) != len(suspected) { len(expected) = %v; len(suspected) = %v }", len(expected), len(suspected))
+		return false, fmt.Errorf("error in 'Device::verifyFirmware': len(expected) != len(suspected) { len(expected) = %v; len(suspected) = %v }", len(expected), len(suspected))
 	}
 
 	for i := 0; i < len(expected); i++ {
@@ -248,13 +253,8 @@ func (d *Device) verifyFirmware(expected []presentation.Packet, suspected []Repl
 			return false, fmt.Errorf("error read suspectFrame[%v] -> type mismath (expected: Frame2; received: %T)", i, suspected[i])
 		}
 
-		//fmt.Println(expectedFrame.Frame.Blob)
 		encoded := presentation.EncodeFrameLoad(expectedFrame.Frame)
-		encoded = string(encoded[:len(encoded)-4])
-		//fmt.Println(encoded)
-
-		//fmt.Println(suspectedFrame.Blob)
-		//fmt.Println(encoded == suspectedFrame.Blob)
+		encoded = encoded[:len(encoded)-4]
 
 		if encoded != suspectedFrame.Blob {
 			return false, fmt.Errorf("frame[%v] data not match", i)

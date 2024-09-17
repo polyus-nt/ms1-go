@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/polyus-nt/ms1-go/internal/io/entity"
 	"github.com/polyus-nt/ms1-go/internal/xxd"
-	"os"
 	"strconv"
 )
 
@@ -29,8 +28,9 @@ func enc(data []byte) string {
 func chopBs(size int, data string) []string {
 
 	res := make([]string, 0, (len(data)+size)/size)
-	fmt.Println(len(data))
+
 	for i := 0; i < len(data); i += size {
+
 		if i+size < len(data) {
 			res = append(res, data[i:i+size])
 		} else {
@@ -47,9 +47,10 @@ func chopBs(size int, data string) []string {
 }
 
 // PrettyFrame выводит данные фрейма
-func PrettyFrame(frame entity.Frame) {
-	fmt.Printf("Frame %v.%v:\n", frame.Page, frame.Part)
-	xxd.PrintOneChunk(xxd.Bin(frame.Blob)) // change it in the future...
+func PrettyFrame(frame entity.Frame) (res string) {
+	res = fmt.Sprintf("Frame %v.%v:\n", frame.Page, frame.Part)
+	res += xxd.PrintOneChunk(xxd.Bin(frame.Blob))
+	return
 }
 
 // GetPart Изымает нужный кусочек (поле) из строки данных
@@ -60,32 +61,30 @@ func GetPart(field Field, s string) string {
 }
 
 // GetHex иъятие беззнакового шестнацеричного числа из поля
-func GetHex(field Field, s string) (int64, error) {
+func GetHex(field Field, s string) (num int64, err error) {
 
 	blob := GetPart(field, s)
-	num, err := strconv.ParseInt(blob, 16, 64)
+	num, err = strconv.ParseInt(blob, 16, 64)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "getHex [%v] failed! {error: %v}", field.Descr, err)
+		return num, fmt.Errorf("getHex failed: { fieldDescr: %v; err: %v }", field.Descr, err)
 	}
-
-	return num, err
+	return
 }
 
 // GetSignedHex иъятие знакового шестнацеричного числа из поля
-func GetSignedHex(field Field, s string) (int64, error) {
+func GetSignedHex(field Field, s string) (num int64, err error) {
 
 	blob := GetPart(Field{Start: field.Start + 1, Len: field.Len - 1}, s)
 
-	num, err := strconv.ParseInt(blob, 16, 64)
+	num, err = strconv.ParseInt(blob, 16, 64)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "getSignedHex [%v] failed! {error: %v}", field.Descr, err)
+		return num, fmt.Errorf("getSignedHex failed: { fieldDescr: %v; err: %v }", field.Descr, err)
 	}
 
 	if GetPart(Field{Len: 1}, s)[0] == '-' {
 		num = -num
 	}
-
-	return num, err
+	return
 }

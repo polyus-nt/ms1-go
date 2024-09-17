@@ -5,11 +5,11 @@ import (
 	"go.bug.st/serial"
 	"go.bug.st/serial/enumerator"
 	"io"
-	"log"
+	"slices"
 	"time"
 )
 
-func MkSerial(portName string) io.ReadWriteCloser {
+func MkSerial(portName string) (io.ReadWriteCloser, error) {
 
 	mode := &serial.Mode{
 		BaudRate: 115200,
@@ -19,14 +19,14 @@ func MkSerial(portName string) io.ReadWriteCloser {
 
 	port, err := serial.Open(portName, mode)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	err = port.SetReadTimeout(75 * time.Millisecond)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
-	return port
+	return port, nil
 }
 
 func PortList() (res []string) {
@@ -37,6 +37,8 @@ func PortList() (res []string) {
 
 		res = append(res, port.Name)
 	}
+	slices.Sort(res)
+
 	return
 }
 

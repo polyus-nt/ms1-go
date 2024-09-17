@@ -22,12 +22,8 @@ func EncodeFrameLoad(frame Frame) string {
 	buf.Reset()
 	buf.WriteString(encoded)
 
-	fmt.Println(buf.String())
-
-	fmt.Fprintf(&buf, "%s", enc([]byte{frame.Page}))
-	fmt.Fprintf(&buf, "%s", enc([]byte{frame.Part}))
-
-	fmt.Println(buf.String())
+	_, _ = fmt.Fprintf(&buf, "%s", enc([]byte{frame.Page}))
+	_, _ = fmt.Fprintf(&buf, "%s", enc([]byte{frame.Part}))
 
 	return buf.String()
 }
@@ -53,16 +49,16 @@ func EncodeFrame(frame Frame, addr Address, mark uint8) string {
 }
 
 // fileToPages формирует страницы на основе данных из файла
-func fileToPages(filePath string) []string {
+func fileToPages(filePath string) (res []string, err error) {
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error from fileToPages with filePath='%v'; Error desc -> %v", filePath, err)
+		return nil, err
 	}
 
-	res := chopBs(config.SIZE_PAGE, string(content))
+	res = chopBs(config.SIZE_PAGE, string(content))
 
-	return res
+	return
 }
 
 // pageToFrames преобразует страницы в фреймы
@@ -79,17 +75,19 @@ func pageToFrames(pageIndex uint8, page string) []Frame {
 }
 
 // FileToFrames преобразует файл сразу в фреймы (файл -> страницы -> фреймы)
-func FileToFrames(filePath string) []Frame {
+func FileToFrames(filePath string) (frames []Frame, err error) {
 
-	pages := fileToPages(filePath)
-	var frames []Frame
+	pages, err := fileToPages(filePath)
+	if err != nil {
+		return
+	}
 
 	for i, page := range pages {
 
 		frames = append(frames, pageToFrames(uint8(i), page)...)
 	}
 
-	return frames
+	return
 }
 
 // codeLoad кодирует Load данные в зависимости от типа их представления
@@ -120,21 +118,16 @@ func codeLoad(load Load) string {
 
 // CodePacket формирует байтовую строку, готовую для отправки
 func CodePacket(packet Packet) string {
+
 	var data []byte
 
-	data = append(data, "--"...)
+	data = append(data, "--"...) // crc32
 	for _, l := range packet.Load {
 		data = append(data, codeLoad(l)...)
 	}
-	fmt.Println(string(data))
-	data = append(data, codeLoad(V{packet.Addr.Val})...)
-	fmt.Println(string(data))
-	data = append(data, codeLoad(N{int64(packet.Mark), 2})...)
-	fmt.Println(string(data))
+	data = append(data, codeLoad(V{V: packet.Addr.Val})...)
+	data = append(data, codeLoad(N{Value: int64(packet.Mark), Len: 2})...)
 	data = append(data, packet.Code...)
-	fmt.Println(string(data))
 	data = append(data, ':')
-	fmt.Println(string(data))
-
 	return string(data)
 }
