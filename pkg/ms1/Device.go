@@ -25,8 +25,19 @@ func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
 }
 
+// setAddress Обнволяет поле адреса (только у объекта, не затрагивая само устройство)
+func (d *Device) SetAddress(addr string) (err error) {
+
+	if len(addr) != 16 {
+		return fmt.Errorf("address length must be 16")
+	}
+
+	d.addr.Val = addr
+	return
+}
+
 func (d *Device) GetAddress() string {
-	return "0x" + d.addr.Val
+	return d.addr.Val
 }
 
 func (d *Device) getMark() uint8 {
@@ -85,6 +96,7 @@ func (d *Device) GetId(updateID, exitConfMode bool) (res []Reply, err error, upd
 	return
 }
 
+// SetId Присвоить устройству новый id, при этом id обновляется и у самой платы (отправляется соответсвуйющий пакет)
 func (d *Device) SetId(id string) (res []Reply, err error) {
 
 	if len(id) != 16 {

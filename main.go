@@ -49,6 +49,13 @@ func main() {
 	fmt.Println(device)
 	fmt.Printf("Device address: %v\n", device.GetAddress())
 
+	// Можно создавать новый объект девайса при каждом обращении к устройству (начале сессии)
+	deviceClone := ms1.NewDevice(port)
+	err = deviceClone.SetAddress(device.GetAddress())
+	if err != nil {
+		log.Fatalln(fmt.Errorf("error setting address: %v", err))
+	}
+
 	ping, err = device.Ping()
 	if err != nil {
 		log.Fatalln(err)
@@ -56,9 +63,9 @@ func main() {
 	fmt.Println(ping)
 
 	// Процесс прошивки платы
-	fileName := "data/main.bin"
+	fileName := "data/mtrx.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
-	firmware, err := device.WriteFirmware(fileName, true)
+	firmware, err := deviceClone.WriteFirmware(fileName, false)
 	if err != nil {
 		log.Fatalln(err)
 	}

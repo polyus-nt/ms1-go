@@ -2,6 +2,8 @@ package ms1
 
 type ReplyStatus = uint8
 
+const ZeroAddress = "0000000000000000"
+
 //goland:noinspection ALL
 const (
 	REPLY_PING ReplyStatus = iota
