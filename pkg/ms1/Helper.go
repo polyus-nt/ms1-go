@@ -76,7 +76,7 @@ func getReply(port io.Reader) Reply {
 		}
 		return Ack{Value: int(data[0])}
 	case "fr":
-		raw, _ := transport.GetSerialBytes(port, 400)
+		raw, _ := transport.GetSerialBytes(port, 281) // TODO: i'm set 281, but it is correct? (default value: 400)
 		data, err := presentation.Decoder([]presentation.Field{{16, 2, "mark"}, {18, 2, "page"}, {20, 2, "index"}}, raw)
 		if err != nil {
 			return Garbage{Comment: "fr", Garbage: fmt.Sprintf("%v { error: %v }\n", raw, err)}
