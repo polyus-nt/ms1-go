@@ -9,6 +9,19 @@ import (
 
 func main() {
 
+	buffer := make([]byte, 10)
+	base := buffer
+	fmt.Printf("base; len: %v, cap: %v\n", len(base), cap(base))
+	fmt.Printf("buffer; len: %v, cap: %v\n", len(buffer), cap(buffer))
+
+	buffer = buffer[2:]
+	fmt.Printf("base; len: %v, cap: %v\n", len(base), cap(base))
+	fmt.Printf("buffer; len: %v, cap: %v\n", len(buffer), cap(buffer))
+
+	buffer = buffer[0:]
+	fmt.Printf("base; len: %v, cap: %v\n", len(base), cap(base))
+	fmt.Printf("buffer; len: %v, cap: %v\n", len(buffer), cap(buffer))
+
 	fmt.Println("Start serial")
 
 	ports := ms1.PortList()
@@ -63,20 +76,20 @@ func main() {
 	fmt.Println(ping)
 
 	// Процесс прошивки платы
-	fileName := "data/mtrx.bin"
+	fileName := "data\\mtrx.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
-	firmware, err := deviceClone.WriteFirmware(fileName, false)
+	firmware, err := deviceClone.WriteFirmware(fileName, true)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	fmt.Println(firmware)
 
 	// check reset functions
-	fmt.Println("Enter for reset device")
+	fmt.Print("Enter for reset device")
 	_, _ = os.Stdin.Read(make([]byte, 1))
 	device.Reset(true)
 
-	fmt.Println("Enter for reset target in device")
+	fmt.Print("Enter for reset target in device")
 	_, _ = os.Stdin.Read(make([]byte, 1))
 	resetTarget, err := device.ResetTarget()
 	if err != nil {

@@ -25,7 +25,7 @@ func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
 }
 
-// setAddress Обнволяет поле адреса (только у объекта, не затрагивая само устройство)
+// SetAddress Обнволяет поле адреса (только у объекта, не затрагивая само устройство)
 func (d *Device) SetAddress(addr string) (err error) {
 
 	if len(addr) != 16 {

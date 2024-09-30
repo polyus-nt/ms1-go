@@ -32,8 +32,6 @@ func workerNoReply(port io.ReadWriter, packets []presentation.Packet) {
 	for _, packet := range packets {
 
 		transport.PutMessage(port, packet)
-
-		transport.Wait()
 	}
 	return
 }

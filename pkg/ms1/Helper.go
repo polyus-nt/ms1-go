@@ -16,8 +16,9 @@ func getReply(port io.Reader) Reply {
 		if len(reply) > 0 {
 			if reply[0] == '.' {
 				break
-			} // else we are receive garbage and continue for next msg
-			transport.Wait()
+			}
+			// else we are receive garbage and continue for next msg
+			// transport.Wait()
 		} else {
 			return Error{0, fmt.Sprintf("Don't reply from serial { %v}", err)} // not reply...
 		}
