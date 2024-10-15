@@ -25,7 +25,7 @@ func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
 }
 
-// SetAddress Обнволяет поле адреса (только у объекта, не затрагивая само устройство)
+// SetAddress Обновляет поле адреса (только у объекта, не затрагивая само устройство)
 func (d *Device) SetAddress(addr string) (err error) {
 
 	if len(addr) != 16 {
@@ -96,7 +96,7 @@ func (d *Device) GetId(updateID, exitConfMode bool) (res []Reply, err error, upd
 	return
 }
 
-// SetId Присвоить устройству новый id, при этом id обновляется и у самой платы (отправляется соответсвуйющий пакет)
+// SetId Присвоить устройству новый id, при этом id обновляется и у самой платы (отправляется соответсвующий пакет)
 func (d *Device) SetId(id string) (res []Reply, err error) {
 
 	if len(id) != 16 {
@@ -158,6 +158,8 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	// Проверка целостности загруженной прошивки (опционально)
 	if checkFlashFirmware {
 		suspectFrames, err := d.getFrames(len(packs)) // Подтянули записанный код прошивки
+		res = append(res, suspectFrames...)
+
 		if err != nil {
 			err = fmt.Errorf("device::WriteFirmware warning: failed loading frames from flash memory mk (%v)", err)
 		} else {
@@ -178,14 +180,51 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	return
 }
 
-// Далее служебные функции
+// TRY AND DELETE !? [deprecated]
+func (d *Device) GetMetadata2Direct() (res []Reply, err error) {
 
-// changeMode Посылает пакет для переключения режима на кибергене
-func (d *Device) changeMode(mode entity.Mode) (res []Reply, err error) {
+	res, err = worker(d.port, []entity.Packet{presentation.PacketGetMetadata2Direct(d.mark, d.addr)})
 
-	packs := []presentation.Packet{presentation.PacketMode(d.getMark(), mode, d.addr)}
+	return
+}
 
-	res, err = worker(d.port, packs)
+func (d *Device) GetMeta() (res Meta, err error) {
+
+	reply, err := worker(d.port, []entity.Packet{presentation.PacketGetMeta(d.mark, d.addr)})
+
+	if err != nil {
+		return
+	}
+
+	if meta, ok := reply[0].(Meta); ok {
+		res = meta
+	} else {
+		err = fmt.Errorf("device::getMeta warning: the meta is incorrect (%T)", reply[0])
+	}
+
+	return
+}
+
+// ChangeModeToConf - Переключить устройство в режим конфигурации
+func (d *Device) ChangeModeToConf() (res []Reply, err error) {
+
+	res, err = worker(d.port, []entity.Packet{presentation.PacketMode(d.getMark(), entity.ModeConf, d.addr)})
+
+	return
+}
+
+// ChangeModeToRun - Переключить устройство в режим Run
+func (d *Device) ChangeModeToRun() (res []Reply, err error) {
+
+	res, err = worker(d.port, []entity.Packet{presentation.PacketMode(d.getMark(), entity.ModeRun, d.addr)})
+
+	return
+}
+
+// ChangeModeToProg - Переключить устройство в режим программирования
+func (d *Device) ChangeModeToProg() (res []Reply, err error) {
+
+	res, err = worker(d.port, []entity.Packet{presentation.PacketMode(d.getMark(), entity.ModeProg, d.addr)})
 
 	return
 }
@@ -208,6 +247,18 @@ func (d *Device) ResetTarget() (res []Reply, err error) {
 	packs := []presentation.Packet{presentation.PacketResetTarget(d.getMark(), d.addr)}
 
 	return worker(d.port, packs)
+}
+
+// Далее служебные функции
+
+// changeMode Посылает пакет для переключения режима на кибергене
+func (d *Device) changeMode(mode entity.Mode) (res []Reply, err error) {
+
+	packs := []presentation.Packet{presentation.PacketMode(d.getMark(), mode, d.addr)}
+
+	res, err = worker(d.port, packs)
+
+	return
 }
 
 // erasePages - очищает нужное количество страниц flash памяти для будущей прошивки

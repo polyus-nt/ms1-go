@@ -60,7 +60,7 @@ func GetPart(field Field, s string) string {
 	return s[field.Start:][:remains]
 }
 
-// GetHex иъятие беззнакового шестнацеричного числа из поля
+// GetHex изъятие без знакового шестнадцатеричного числа из поля
 func GetHex(field Field, s string) (num int64, err error) {
 
 	blob := GetPart(field, s)
@@ -72,7 +72,29 @@ func GetHex(field Field, s string) (num int64, err error) {
 	return
 }
 
-// GetSignedHex иъятие знакового шестнацеричного числа из поля
+// GetBool изъятие логического значения из поля
+func GetBool(field Field, s string) (res bool, err error) {
+
+	blob := GetPart(field, s)
+
+	if blob[0] == 't' {
+		res = true
+	} else if blob[0] == 'f' {
+		res = false
+	} else {
+		err = fmt.Errorf("getBool failed: { fieldDescr: %v; err: %v}", field.Descr, err)
+	}
+
+	return
+}
+
+// GetString изъятие строки из поля
+func GetString(field Field, s string) (string, error) {
+
+	return GetPart(field, s), nil
+}
+
+// GetSignedHex изъятие знакового шестнадцатеричного числа из поля
 func GetSignedHex(field Field, s string) (num int64, err error) {
 
 	blob := GetPart(Field{Start: field.Start + 1, Len: field.Len - 1}, s)

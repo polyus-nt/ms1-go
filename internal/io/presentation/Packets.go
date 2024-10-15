@@ -83,3 +83,13 @@ func File2Frames2Packets(filePath string, startMark uint8, addr Address) (packet
 
 	return
 }
+
+func PacketGetMeta(m uint8, addr Address) Packet {
+
+	return Packet{Mark: m, Addr: addr, Code: "m1", Load: []Load{}}
+}
+
+func PacketGetMetadata2Direct(m uint8, addr Address) Packet {
+
+	return Packet{Mark: m, Addr: addr, Code: "md", Load: []Load{}}
+}

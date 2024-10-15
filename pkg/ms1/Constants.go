@@ -15,9 +15,7 @@ const (
 	REPLY_REF
 	REPLY_ID
 	REPLY_FRAME
+	REPLY_META
 	REPLY_GARBAGE
 	REPLY_ERROR
 )
-
-// TODO: add map with device info by REF_ID (MDI)
-// TODO: add iota generator const for nanoid about devices (and use later as key for map with ms1 info (MDI))

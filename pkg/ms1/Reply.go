@@ -120,6 +120,32 @@ func (f Frame2) GetStatus() ReplyStatus {
 	return REPLY_FRAME
 }
 
+type Meta struct {
+	Mark          int
+	Valid         bool
+	RefBlHw       string // Описывает физическое окружение контроллера (плату)
+	RefBlFw       string // Указывает на версию прошивки загрузчика
+	RefBlUserCode string //
+	RefBlChip     string // Указывает на контроллер, здесь то, что нужно для компиляции прошивки
+	RefBlProtocol string // Описывает возможности протокола загрузчика
+	RefCgHw       string // Указывает на аппаратное исполнение
+	RefCgFw       string // Указывает на версию прошивки кибергена
+	RefCgProtocol string // Указывает на возможности протокола кибергена
+}
+
+func (m Meta) String() string {
+
+	var buf bytes.Buffer
+
+	buf.WriteString(fmt.Sprintf("Meta [ %#x ] -> {\n\tValid: %v\n\trefBlHw: %v\n\trefBlFw : %v\n\trefBlUserCode: %v\n\trefBlChip : %v\n\trefBlProtocol: %v\n\trefCgHw: %v\n\trefCgFw: %v\n\trefCgProtocol: %v\n}", m.Mark, m.Valid, m.RefBlHw, m.RefBlFw, m.RefBlUserCode, m.RefBlChip, m.RefBlProtocol, m.RefCgHw, m.RefCgFw, m.RefCgProtocol))
+
+	return buf.String()
+}
+
+func (m Meta) GetStatus() ReplyStatus {
+	return REPLY_META
+}
+
 type Garbage struct {
 	Comment string
 	Garbage string
