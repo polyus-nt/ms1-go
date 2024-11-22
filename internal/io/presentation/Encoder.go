@@ -6,7 +6,6 @@ import (
 	"github.com/polyus-nt/ms1-go/internal/config"
 	"os"
 	"slices"
-	"strconv"
 )
 
 // EncodeFrameLoad формирует на основе фрейма данные для отправки (байтовая строка)
@@ -28,7 +27,7 @@ func EncodeFrameLoad(frame Frame) string {
 	return buf.String()
 }
 
-// EncodeFrame TODO разобраться с ее телом [deprecated --crc]
+// EncodeFrame TODO разобраться с ее телом [deprecated --crc32]
 // формирует на основе фрейма данные для отправки (байтовая строка)
 func EncodeFrame(frame Frame, addr Address, mark uint8) string {
 	var buf bytes.Buffer
@@ -97,18 +96,7 @@ func codeLoad(load Load) string {
 	case V:
 		return l.V
 	case N:
-		hex := strconv.FormatInt(l.Value, 16)
-		str := make([]byte, l.Len)
-		hexBegin := len(str) - len(hex)
-
-		for i := range str {
-			if i < hexBegin {
-				str[i] = '0'
-			} else {
-				str[i] = hex[i-hexBegin]
-			}
-		}
-		return string(str)
+		return ToHex(l.Value, l.Len)
 	case F:
 		return EncodeFrameLoad(l.Frame)
 	}
@@ -121,7 +109,7 @@ func CodePacket(packet Packet) string {
 
 	var data []byte
 
-	data = append(data, "--"...) // crc32
+	data = append(data, "--"...) // crc8 (заполняем ниже, когда записали данные)
 	for _, l := range packet.Load {
 		data = append(data, codeLoad(l)...)
 	}
@@ -129,5 +117,8 @@ func CodePacket(packet Packet) string {
 	data = append(data, codeLoad(N{Value: int64(packet.Mark), Len: 2})...)
 	data = append(data, packet.Code...)
 	data = append(data, ':')
+
+	copy(data, codeLoad(N{Value: int64(CalcCRC8(data[2:])), Len: 2}))
+
 	return string(data)
 }

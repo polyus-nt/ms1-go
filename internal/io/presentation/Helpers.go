@@ -110,3 +110,19 @@ func GetSignedHex(field Field, s string) (num int64, err error) {
 	}
 	return
 }
+
+func ToHex(val int64, length int) string {
+
+	hex := strconv.FormatInt(val, 16)
+	str := make([]byte, length)
+	hexBegin := len(str) - len(hex)
+
+	for i := range str {
+		if i < hexBegin {
+			str[i] = '0'
+		} else {
+			str[i] = hex[i-hexBegin]
+		}
+	}
+	return string(str)
+}

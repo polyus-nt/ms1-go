@@ -14,6 +14,8 @@ const (
 	SERIAL_SEND_WAITING = 10 * time.Millisecond
 	SERIAL_READ_WAITING = 25 * time.Millisecond
 
+	CRC_LENGTH = 2
+
 	DEBUG__ = false
 )
 
