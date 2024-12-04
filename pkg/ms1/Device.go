@@ -14,15 +14,30 @@ type Device struct {
 	addr entity.Address
 	mark uint8
 	id   map[uint8]string
+
+	logger chan UploadStage
 }
 
 func NewDevice(port io.ReadWriter) *Device {
-	return &Device{port, config.ZeroAddress, 0, nil}
+	return &Device{port, config.ZeroAddress, 0, nil, nil}
 }
 
 // Stringer
 func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
+}
+
+func (d *Device) ActivateLog() <-chan UploadStage {
+
+	/*  Если канал != nil, то он точно не закрыт. Внутренний инвариант структуры Device. (исключения close closed не будет, пользователь received channel закрыть не может)*/
+	if d.logger != nil {
+		close(d.logger)
+	}
+
+	// create new channel
+	d.logger = make(chan UploadStage, 2)
+
+	return d.logger
 }
 
 // SetAddress Обновляет поле адреса (только у объекта, не затрагивая само устройство)
@@ -114,6 +129,7 @@ func (d *Device) SetId(id string) (res []Reply, err error) {
 func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []Reply, err error) {
 
 	// ping device
+	d.log(PING)
 	ping, err := d.Ping()
 	res = append(res, ping)
 	if err != nil {
@@ -121,6 +137,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Открытие прошивки и формирование пакетов
+	d.log(PREPARE_FIRMWARE)
 	packs, err := presentation.File2Frames2Packets(fileName, d.mark, d.addr)
 	if err != nil {
 		return
@@ -128,6 +145,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	d.mark += uint8(len(packs)) // Shift to mark len(Packets)
 
 	// Перевод в режим программирования
+	d.log(CHANGE_MODE_TO_PROG)
 	mode, err := d.changeMode(entity.ModeProg)
 	res = append(res, mode...)
 	if err != nil {
@@ -135,6 +153,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// ping device
+	d.log(PING)
 	ping, err = d.Ping()
 	res = append(res, ping)
 	if err != nil {
@@ -142,6 +161,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Очистка страниц
+	d.log(ERASE_OLD_FIRMWARE)
 	pages, err := d.erasePages(len(packs)) // len(packs) must be equal to len(frames)
 	res = append(res, pages...)
 	if err != nil {
@@ -149,6 +169,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Загрузка прошивки
+	d.log(PUSH_FIRMWARE)
 	replies, err := worker(d.port, packs)
 	res = append(res, replies...)
 	if err != nil {
@@ -157,9 +178,11 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 
 	// Проверка целостности загруженной прошивки (опционально)
 	if checkFlashFirmware {
+		d.log(PULL_FIRMWARE)
 		suspectFrames, err := d.getFrames(len(packs)) // Подтянули записанный код прошивки
 		res = append(res, suspectFrames...)
 
+		d.log(VERIFY_FIRMWARE)
 		if err != nil {
 			err = fmt.Errorf("device::WriteFirmware warning: failed loading frames from flash memory mk (%v)", err)
 		} else {
@@ -171,11 +194,14 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Перевод в режим Run
+	d.log(CHANGE_MODE_TO_RUN)
 	mode, err2 := d.changeMode(entity.ModeRun)
 	res = append(res, mode...)
 	if err == nil {
 		err = err2
 	}
+
+	d.deactivateLogger()
 
 	return
 }
@@ -325,6 +351,31 @@ func (d *Device) verifyFirmware(expected []presentation.Packet, suspected []Repl
 	}
 
 	return true, nil
+}
+
+func (d *Device) loggerIsActive() bool {
+
+	return d.logger != nil
+}
+
+func (d *Device) log(msg UploadStage) {
+
+	if d.loggerIsActive() {
+		// write only if channel has place for data else skip
+		select {
+		case d.logger <- msg:
+		default:
+		}
+	}
+}
+
+func (d *Device) deactivateLogger() {
+
+	if d.loggerIsActive() {
+		close(d.logger)
+	}
+
+	d.logger = nil
 }
 
 func (d *Device) jump() (res bool, err error) {

@@ -62,9 +62,33 @@ func main() {
 	}
 	fmt.Println(ping)
 
+	_, err = device.Ping()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(ping)
+
 	// Процесс прошивки платы
-	fileName := "data\\main.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\DataBus\\build\\main1DataBus.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\DataBus\\build\\main2DataBus.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main1SimpleBus.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main2SimpleBus.bin"
+	fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\buildFiles\\mainUART1ListenOnly.bin"
+	//fileName := "C:\\Users\\mrxmr\\OneDrive\\Документы\\Cache\\TGCache\\sketch.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\firmwares\\portingLapkiIDE\\mtrx\\build\\mtrx.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\sketch\\mtrx\\sketch\\build\\mtrxSketch.bin"
+
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules\\UARTModules\\SimpleBus\\build\\main3_lmp_SimpleBus.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
+	deviceClone.ActivateLog()
+	backTrack := deviceClone.ActivateLog()
+	go func() {
+		for record := range backTrack {
+			fmt.Println("STATUS: ", record)
+		}
+		fmt.Println("FINISHED STATUS GOROUTINE")
+	}()
+
 	firmware, err := deviceClone.WriteFirmware(fileName, true)
 	if err != nil {
 		log.Fatalln(err)

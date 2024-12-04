@@ -71,19 +71,6 @@ func getReply(port io.Reader) Reply {
 		}
 		rawData = "gA" + rawData
 		res = geneAck
-	case "RF":
-		rawData, _ = transport.GetSerialBytes(port, 4+2+16-config.CRC_LENGTH)
-		a := rawData[:4]
-		m := rawData[4 : 4+2]
-		r := rawData[4+2:]
-		var ref Ref
-		// TODO: fix it (fields and value not correct (size not equal))
-		err := presentation.Decoder([]interface{}{&ref.Value}, []presentation.Field{{4, 2, "mark"}, {6, 16, "ref"}}, a+m+r)
-		if err != nil {
-			return Garbage{Comment: "RF", Garbage: fmt.Sprintf("%v { error: %v }\n", r, err)}
-		}
-		rawData = "RF" + rawData
-		res = ref
 	case "OK":
 		rawData, _ = transport.GetSerialBytes(port, 20-config.CRC_LENGTH)
 		var ack Ack
