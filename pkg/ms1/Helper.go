@@ -143,7 +143,10 @@ func getReply(port io.Reader) Reply {
 	crcGot, _ := transport.GetSerialBytes(port, config.CRC_LENGTH)
 	crcCalc := presentation.ToHex(int64(presentation.CalcCRC8([]byte(rawData))), 2)
 	if crcGot != crcCalc {
-		return Garbage{Comment: "ER", Garbage: fmt.Sprintf("%v { error: crc8 for received packet is not correct (got: %v; calc: %v) }\n", rawData, crcGot, crcCalc)}
+		// for packet 'fr' crc8 calc is not correct (skip this packet)
+		if rawData[1:3] != "fr" {
+			return Garbage{Comment: "ER", Garbage: fmt.Sprintf("%v { error: crc8 for received packet is not correct (got: %v; calc: %v) }\n", rawData, crcGot, crcCalc)}
+		}
 	}
 
 	return res

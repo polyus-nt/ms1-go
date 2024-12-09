@@ -11,6 +11,9 @@ func main() {
 
 	fmt.Println("Start serial")
 
+	//data := []byte(".dr668e739880610dc1320000000000000800409d0800409d0800409d0800409d0800409d0800409d000000000800409d0800409d0800409d0800409d0800409d0800409d000000000800409d08003b8d0800409d00000000000000000800409d000000000000000000000000000000000000000000000000000000000800409d0800409d0800404d20002000")
+	//fmt.Println(crc8.Checksum(data, crc8.MakeTable(crc8.CRC8_CDMA2000)))
+
 	ports := ms1.PortList()
 
 	fmt.Println("Available ports:")
@@ -73,12 +76,12 @@ func main() {
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\firmwares\\portingLapkiIDE\\UARTModules\\DataBus\\build\\main2DataBus.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main1SimpleBus.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main2SimpleBus.bin"
-	fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\buildFiles\\mainUART1ListenOnly.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\buildFiles\\mainUART1ListenOnly.bin"
 	//fileName := "C:\\Users\\mrxmr\\OneDrive\\Документы\\Cache\\TGCache\\sketch.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\firmwares\\portingLapkiIDE\\mtrx\\build\\mtrx.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\sketch\\mtrx\\sketch\\build\\mtrxSketch.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\mtrx\\build\\mtrx.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules_PlatformEdition_2\\build\\main2DataBus.bin"
+	fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules_PlatformEdition_2\\build\\main1DataBus.bin"
 
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules\\UARTModules\\SimpleBus\\build\\main3_lmp_SimpleBus.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)

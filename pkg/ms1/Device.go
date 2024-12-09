@@ -179,14 +179,15 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	// Проверка целостности загруженной прошивки (опционально)
 	if checkFlashFirmware {
 		d.log(BackTrackMsg{UploadStage: PULL_FIRMWARE, NoPacks: true})
-		suspectFrames, err := d.getFrames(len(packs)) // Подтянули записанный код прошивки
-		res = append(res, suspectFrames...)
+		replies, err = d.getFrames(len(packs)) // Подтянули записанный код прошивки
+		res = append(res, replies...)
 
-		d.log(BackTrackMsg{UploadStage: VERIFY_FIRMWARE, NoPacks: true})
 		if err != nil {
 			err = fmt.Errorf("device::WriteFirmware warning: failed loading frames from flash memory mk (%v)", err)
 		} else {
-			ok, err := d.verifyFirmware(packs, suspectFrames)
+			d.log(BackTrackMsg{UploadStage: VERIFY_FIRMWARE, NoPacks: true})
+			var ok bool
+			ok, err = d.verifyFirmware(packs, replies)
 			if err != nil || !ok {
 				err = fmt.Errorf("device::WriteFirmware warning: the firmware is loaded incorrectly (%v)", err)
 			}
