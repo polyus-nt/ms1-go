@@ -9,7 +9,22 @@ import (
 
 func worker(port io.ReadWriter, packets []presentation.Packet) (res []Reply, err error) {
 
+	return workerBackTrack(port, packets, nil, BackTrackMsg{})
+}
+
+func workerBackTrack(port io.ReadWriter, packets []presentation.Packet, logger func(msg BackTrackMsg), msg BackTrackMsg) (res []Reply, err error) {
+
+	if logger != nil {
+		msg.CurPack = 0
+		msg.TotalPacks = uint16(len(packets))
+	}
+
 	for _, packet := range packets {
+
+		if logger != nil {
+			msg.CurPack++
+			logger(msg)
+		}
 
 		transport.PutMessage(port, packet)
 

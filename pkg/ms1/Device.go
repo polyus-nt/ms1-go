@@ -15,7 +15,7 @@ type Device struct {
 	mark uint8
 	id   map[uint8]string
 
-	logger chan UploadStage
+	logger chan BackTrackMsg
 }
 
 func NewDevice(port io.ReadWriter) *Device {
@@ -27,7 +27,7 @@ func (d *Device) String() string {
 	return fmt.Sprintf("Device { addr: %v, port: %v }", d.addr, PortName(d.port))
 }
 
-func (d *Device) ActivateLog() <-chan UploadStage {
+func (d *Device) ActivateLog() <-chan BackTrackMsg {
 
 	/*  Если канал != nil, то он точно не закрыт. Внутренний инвариант структуры Device. (исключения close closed не будет, пользователь received channel закрыть не может)*/
 	if d.logger != nil {
@@ -35,7 +35,7 @@ func (d *Device) ActivateLog() <-chan UploadStage {
 	}
 
 	// create new channel
-	d.logger = make(chan UploadStage, 2)
+	d.logger = make(chan BackTrackMsg, 8)
 
 	return d.logger
 }
@@ -129,7 +129,7 @@ func (d *Device) SetId(id string) (res []Reply, err error) {
 func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []Reply, err error) {
 
 	// ping device
-	d.log(PING)
+	d.log(BackTrackMsg{UploadStage: PING, CurPack: 1, TotalPacks: 1})
 	ping, err := d.Ping()
 	res = append(res, ping)
 	if err != nil {
@@ -137,7 +137,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Открытие прошивки и формирование пакетов
-	d.log(PREPARE_FIRMWARE)
+	d.log(BackTrackMsg{UploadStage: PREPARE_FIRMWARE, NoPacks: true})
 	packs, err := presentation.File2Frames2Packets(fileName, d.mark, d.addr)
 	if err != nil {
 		return
@@ -145,7 +145,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	d.mark += uint8(len(packs)) // Shift to mark len(Packets)
 
 	// Перевод в режим программирования
-	d.log(CHANGE_MODE_TO_PROG)
+	d.log(BackTrackMsg{UploadStage: CHANGE_MODE_TO_PROG, CurPack: 1, TotalPacks: 1})
 	mode, err := d.changeMode(entity.ModeProg)
 	res = append(res, mode...)
 	if err != nil {
@@ -153,7 +153,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// ping device
-	d.log(PING)
+	d.log(BackTrackMsg{UploadStage: PING, CurPack: 1, TotalPacks: 1})
 	ping, err = d.Ping()
 	res = append(res, ping)
 	if err != nil {
@@ -161,7 +161,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Очистка страниц
-	d.log(ERASE_OLD_FIRMWARE)
+	d.log(BackTrackMsg{UploadStage: ERASE_OLD_FIRMWARE, NoPacks: true})
 	pages, err := d.erasePages(len(packs)) // len(packs) must be equal to len(frames)
 	res = append(res, pages...)
 	if err != nil {
@@ -169,8 +169,8 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Загрузка прошивки
-	d.log(PUSH_FIRMWARE)
-	replies, err := worker(d.port, packs)
+	d.log(BackTrackMsg{UploadStage: PUSH_FIRMWARE, NoPacks: true})
+	replies, err := workerBackTrack(d.port, packs, d.log, BackTrackMsg{UploadStage: PUSH_FIRMWARE})
 	res = append(res, replies...)
 	if err != nil {
 		return
@@ -178,11 +178,11 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 
 	// Проверка целостности загруженной прошивки (опционально)
 	if checkFlashFirmware {
-		d.log(PULL_FIRMWARE)
+		d.log(BackTrackMsg{UploadStage: PULL_FIRMWARE, NoPacks: true})
 		suspectFrames, err := d.getFrames(len(packs)) // Подтянули записанный код прошивки
 		res = append(res, suspectFrames...)
 
-		d.log(VERIFY_FIRMWARE)
+		d.log(BackTrackMsg{UploadStage: VERIFY_FIRMWARE, NoPacks: true})
 		if err != nil {
 			err = fmt.Errorf("device::WriteFirmware warning: failed loading frames from flash memory mk (%v)", err)
 		} else {
@@ -194,7 +194,7 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	}
 
 	// Перевод в режим Run
-	d.log(CHANGE_MODE_TO_RUN)
+	d.log(BackTrackMsg{UploadStage: CHANGE_MODE_TO_RUN, CurPack: 1, TotalPacks: 1})
 	mode, err2 := d.changeMode(entity.ModeRun)
 	res = append(res, mode...)
 	if err == nil {
@@ -297,7 +297,7 @@ func (d *Device) erasePages(lenFrames int) (res []Reply, err error) {
 		packs = append(packs, presentation.PacketNuke(int64(i), d.getMark(), d.addr))
 	}
 
-	res, err = worker(d.port, packs)
+	res, err = workerBackTrack(d.port, packs, d.log, BackTrackMsg{UploadStage: ERASE_OLD_FIRMWARE})
 
 	return
 }
@@ -321,7 +321,7 @@ func (d *Device) getFrames(lenFrames int) (res []Reply, err error) {
 			IPage(i), IFrame(i), d.addr))
 	}
 
-	res, err = worker(d.port, packs)
+	res, err = workerBackTrack(d.port, packs, d.log, BackTrackMsg{UploadStage: PULL_FIRMWARE})
 
 	return
 }
@@ -358,7 +358,7 @@ func (d *Device) loggerIsActive() bool {
 	return d.logger != nil
 }
 
-func (d *Device) log(msg UploadStage) {
+func (d *Device) log(msg BackTrackMsg) {
 
 	if d.loggerIsActive() {
 		// write only if channel has place for data else skip
