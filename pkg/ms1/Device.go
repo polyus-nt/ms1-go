@@ -207,6 +207,70 @@ func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []
 	return
 }
 
+func (d *Device) GetFirmware(w io.Writer, qFrames int) (err error) {
+
+	// ping device
+	d.log(BackTrackMsg{UploadStage: PING, CurPack: 1, TotalPacks: 1})
+	_, err = d.Ping()
+	if err != nil {
+		return
+	}
+
+	// Перевод в режим программирования
+	d.log(BackTrackMsg{UploadStage: CHANGE_MODE_TO_PROG, CurPack: 1, TotalPacks: 1})
+	_, err = d.changeMode(entity.ModeProg)
+	if err != nil {
+		return
+	}
+
+	// ping device
+	d.log(BackTrackMsg{UploadStage: PING, CurPack: 1, TotalPacks: 1})
+	_, err = d.Ping()
+	if err != nil {
+		return
+	}
+
+	// pull firmware
+	d.log(BackTrackMsg{UploadStage: PULL_FIRMWARE, NoPacks: true})
+	frames, err := d.getFrames(qFrames)
+	if err != nil {
+		return fmt.Errorf("device::getFirmware error: failed loading frames from flash memory mk (%w)", err)
+	}
+
+	// convert from frame to bin data and put in w
+	d.log(BackTrackMsg{UploadStage: GET_FIRMWARE, NoPacks: true})
+	for i, frame := range frames {
+
+		d.log(BackTrackMsg{UploadStage: GET_FIRMWARE, CurPack: uint16(i), TotalPacks: uint16(qFrames)})
+
+		if frame2, ok := frame.(Frame2); ok {
+
+			data, err := presentation.Frame2Bin(frame2.Blob)
+			if err != nil {
+				return err
+			}
+
+			_, err = w.Write(data)
+			if err != nil {
+				return fmt.Errorf("device::getFirmware error: failed writing frame to writer (%w)", err)
+			}
+		} else {
+			return fmt.Errorf("device::getFirmware error: invalid frame type")
+		}
+	}
+
+	// Перевод в режим Run
+	d.log(BackTrackMsg{UploadStage: CHANGE_MODE_TO_RUN, CurPack: 1, TotalPacks: 1})
+	_, err = d.changeMode(entity.ModeRun)
+	if err == nil {
+		return
+	}
+
+	d.deactivateLogger()
+
+	return nil
+}
+
 // TRY AND DELETE !? [deprecated]
 func (d *Device) GetMetadata2Direct() (res []Reply, err error) {
 

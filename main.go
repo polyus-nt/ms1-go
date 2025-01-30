@@ -72,81 +72,17 @@ func main() {
 	fmt.Println(ping)
 
 	// Процесс прошивки платы
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\DataBus\\build\\main1DataBus.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\firmwares\\portingLapkiIDE\\UARTModules\\DataBus\\build\\main2DataBus.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main1SimpleBus.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UART\\UARTModules\\SimpleBus\\build\\main2SimpleBus.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\buildFiles\\mainUART1ListenOnly.bin"
-	//fileName := "C:\\Users\\mrxmr\\OneDrive\\Документы\\Cache\\TGCache\\sketch.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\repo\\stm32\\ms-tuc\\firmwares\\portingLapkiIDE\\mtrx\\build\\mtrx.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\sketch\\mtrx\\sketch\\build\\mtrxSketch.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\mtrx\\build\\mtrx.bin"
-	fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules_PlatformEdition_2\\build\\main1DataBus.bin"
+	fileName := "C:\\Users\\mrxmr\\Boss\\gitFolders\\Polyus_group\\ms-tuc\\LapkiIdePlatformEdition\\stm32G030\\build\\main_btn_lmp_main.bin"
+	//fileName := "C:\\Users\\mrxmr\\Boss\\gitFolders\\Polyus_group\\ms-tuc\\LapkiIdePlatformEdition\\stm32G030\\build\\main_mtrx.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\dump_firmware3492523334"
 
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\UARTModules\\UARTModules\\SimpleBus\\build\\main3_lmp_SimpleBus.bin"
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
 	deviceClone.ActivateLog()
 	backTrack := deviceClone.ActivateLog()
-	go func() {
+	fmt.Print("Start writing firmware:")
+	go printer(backTrack)
 
-		fmt.Print("Start writing firmware:")
-		var lastRecordType ms1.UploadStage = 255
-		var noPackRecord *ms1.BackTrackMsg = nil
-		var noPackMsg string
-
-		for record := range backTrack {
-
-			// parse type of msg
-			var msg string
-			if lastRecordType != record.UploadStage {
-				msg += "\n"
-				lastRecordType = record.UploadStage
-
-				if noPackRecord != nil {
-					fmt.Print("\r" + noPackMsg + ": done")
-				}
-			} else {
-				msg += "\r"
-			}
-
-			switch record.UploadStage {
-			case ms1.PING:
-				msg += "PING"
-			case ms1.CHANGE_MODE_TO_PROG:
-				msg += "CHANGE_MODE_TO_PROG"
-			case ms1.PREPARE_FIRMWARE:
-				msg += "PREPARE_FIRMWARE"
-			case ms1.ERASE_OLD_FIRMWARE:
-				msg += "ERASE_OLD_FIRMWARE"
-			case ms1.PUSH_FIRMWARE:
-				msg += "PUSH_FIRMWARE"
-			case ms1.PULL_FIRMWARE:
-				msg += "PULL_FIRMWARE"
-			case ms1.VERIFY_FIRMWARE:
-				msg += "VERIFY_FIRMWARE"
-			case ms1.CHANGE_MODE_TO_RUN:
-				msg += "CHANGE_MODE_TO_RUN"
-			default:
-				msg += "SOME ACTION"
-			}
-
-			// fill progress
-			// if packet has num of packets
-			if !record.NoPacks {
-				noPackRecord = nil
-				msg += fmt.Sprintf(": %v/%v", record.CurPack, record.TotalPacks)
-			} else {
-				noPackRecord = &record
-				noPackMsg = msg[1:]
-				msg += ": ..."
-			}
-
-			fmt.Print(msg)
-		}
-		fmt.Println("\n--- FINISHED STATUS GOROUTINE ---")
-	}()
-
-	firmware, err := deviceClone.WriteFirmware(fileName, true)
+	firmware, err := deviceClone.WriteFirmware(fileName, false)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -158,6 +94,27 @@ func main() {
 		log.Fatalln(fmt.Errorf("error getting meta info: %v", err))
 	}
 	fmt.Println(meta)
+
+	// Извлечение прошивки из памяти мк
+	if false {
+
+		fmt.Println("Temp dir: ", os.TempDir())
+		dumpFirmware, err := os.CreateTemp("", "dump_firmware")
+		defer func() {
+			_ = dumpFirmware.Close()
+			_ = os.Remove(dumpFirmware.Name())
+		}()
+		fmt.Println("Temp file with dump firmware: ", dumpFirmware.Name())
+
+		backTrack = deviceClone.ActivateLog()
+		go printer(backTrack)
+
+		err = deviceClone.GetFirmware(dumpFirmware, 180)
+		_ = dumpFirmware.Close()
+		if err != nil {
+			log.Fatalln(fmt.Errorf("error getting firmware: %v", err))
+		}
+	}
 
 	// check reset functions
 	fmt.Print("Enter for reset device")
@@ -173,4 +130,64 @@ func main() {
 	fmt.Println(resetTarget)
 
 	fmt.Println("Finished!")
+}
+
+func printer(backTrack <-chan ms1.BackTrackMsg) {
+
+	var lastRecordType ms1.UploadStage = 255
+	var noPackRecord *ms1.BackTrackMsg = nil
+	var noPackMsg string
+
+	for record := range backTrack {
+
+		// parse type of msg
+		var msg string
+		if lastRecordType != record.UploadStage {
+			msg += "\n"
+			lastRecordType = record.UploadStage
+
+			if noPackRecord != nil {
+				fmt.Print("\r" + noPackMsg + ": done")
+			}
+		} else {
+			msg += "\r"
+		}
+
+		switch record.UploadStage {
+		case ms1.PING:
+			msg += "PING"
+		case ms1.CHANGE_MODE_TO_PROG:
+			msg += "CHANGE_MODE_TO_PROG"
+		case ms1.PREPARE_FIRMWARE:
+			msg += "PREPARE_FIRMWARE"
+		case ms1.ERASE_OLD_FIRMWARE:
+			msg += "ERASE_OLD_FIRMWARE"
+		case ms1.PUSH_FIRMWARE:
+			msg += "PUSH_FIRMWARE"
+		case ms1.PULL_FIRMWARE:
+			msg += "PULL_FIRMWARE"
+		case ms1.GET_FIRMWARE:
+			msg += "GET_FIRMWARE"
+		case ms1.VERIFY_FIRMWARE:
+			msg += "VERIFY_FIRMWARE"
+		case ms1.CHANGE_MODE_TO_RUN:
+			msg += "CHANGE_MODE_TO_RUN"
+		default:
+			msg += "SOME ACTION"
+		}
+
+		// fill progress
+		// if packet has num of packets
+		if !record.NoPacks {
+			noPackRecord = nil
+			msg += fmt.Sprintf(": %v/%v", record.CurPack, record.TotalPacks)
+		} else {
+			noPackRecord = &record
+			noPackMsg = msg[1:]
+			msg += ": ..."
+		}
+
+		fmt.Print(msg)
+	}
+	fmt.Println("\n--- FINISHED STATUS GOROUTINE ---")
 }

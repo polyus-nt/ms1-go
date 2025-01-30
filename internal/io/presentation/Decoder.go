@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"fmt"
+	"slices"
 )
 
 // Decoder декодирует поля в сообщении (байтовая строка). В зависимости от типа, куда сохраняется результат, вызывается соответствующая функция
@@ -68,4 +69,16 @@ func Decoder(res []interface{}, fields []Field, s string) (err error) {
 	}
 
 	return
+}
+
+func Frame2Bin(frame string) ([]byte, error) {
+
+	decoded, err := dec(frame)
+	if err != nil {
+		return nil, fmt.Errorf("decoding frame error: %w", err)
+	}
+
+	slices.Reverse(decoded)
+
+	return decoded, nil
 }

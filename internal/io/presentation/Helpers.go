@@ -24,6 +24,10 @@ func enc(data []byte) string {
 	return hex.EncodeToString(data)
 }
 
+func dec(data string) ([]byte, error) {
+	return hex.DecodeString(data)
+}
+
 // chopBs разбивает строку на равные кусочки размером size, заполняя пустоту в конце при помощи \x00
 func chopBs(size int, data string) []string {
 
