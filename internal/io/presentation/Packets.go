@@ -12,9 +12,9 @@ func PacketPing(m uint8, addr Address) Packet {
 
 func PacketAllow(m uint8, addr Address, isBlock bool) Packet {
 
-	loadStr := "f"
+	loadStr := "t"
 	if isBlock {
-		loadStr = "t"
+		loadStr = "f"
 	}
 
 	return Packet{Mark: m, Addr: addr, Code: "al", Load: []Load{V{V: loadStr}}}

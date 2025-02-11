@@ -76,8 +76,8 @@ func main() {
 	//fileName := "C:\\Users\\mrxmr\\Boss\\gitFolders\\Polyus_group\\ms-tuc\\LapkiIdePlatformEdition\\stm32G030\\build\\main_mtrx.bin"
 	//fileName := "C:\\Users\\mrxmr\\Downloads\\dump_firmware3492523334"
 
-	fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\firmware test\\ms1-fw\\tests\\tjc-ms1-btn-a3\\allowCheck\\blinkOnMsgSerial\\build\\main.bin"
-	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\firmware test\\ms1-fw\\tests\\tjc-ms1-btn-a3\\allowCheck\\writeSerial\\build\\main.bin"
+	//fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\firmware test\\ms1-fw\\tests\\tjc-ms1-btn-a3\\allowCheck\\blinkOnMsgSerial\\build\\main.bin"
+	fileName := "C:\\Users\\mrxmr\\Downloads\\Work\\firmware test\\ms1-fw\\tests\\tjc-ms1-btn-a3\\allowCheck\\writeSerial\\build\\main.bin"
 
 	fmt.Printf("Started process write firmware to board from file { %v }\n", fileName)
 	deviceClone.ActivateLog()
@@ -120,7 +120,7 @@ func main() {
 	}
 
 	// TODO: turn off this branch
-	allow, err := device.Allow(true)
+	allow, err := device.Allow(false)
 	if err != nil {
 		log.Fatalln(err)
 	}
