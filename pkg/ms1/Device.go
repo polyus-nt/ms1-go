@@ -126,6 +126,19 @@ func (d *Device) SetId(id string) (res []Reply, err error) {
 	return
 }
 
+// Разрешить/запретить микроконтроллеру бутлоадера связываться с пользовательской шиной
+func (d *Device) Allow(isBlock bool) (res Reply, err error) {
+
+	// create packs
+	packs := []presentation.Packet{presentation.PacketAllow(d.getMark(), d.addr, isBlock)}
+
+	// exec
+	resT, err := worker(d.port, packs)
+	res = resT[0]
+
+	return
+}
+
 func (d *Device) WriteFirmware(fileName string, checkFlashFirmware bool) (res []Reply, err error) {
 
 	// ping device

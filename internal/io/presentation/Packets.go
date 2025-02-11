@@ -10,6 +10,16 @@ func PacketPing(m uint8, addr Address) Packet {
 	return Packet{Mark: m, Addr: addr, Code: "pi", Load: []Load{V{}}}
 }
 
+func PacketAllow(m uint8, addr Address, isBlock bool) Packet {
+
+	loadStr := "f"
+	if isBlock {
+		loadStr = "t"
+	}
+
+	return Packet{Mark: m, Addr: addr, Code: "al", Load: []Load{V{V: loadStr}}}
+}
+
 func PacketPong(addr Address) Packet {
 
 	return Packet{Mark: 0, Addr: addr, Code: "po", Load: []Load{V{}}}
