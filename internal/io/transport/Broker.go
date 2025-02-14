@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"errors"
 	"fmt"
 	"github.com/polyus-nt/ms1-go/internal/config"
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
@@ -9,6 +10,8 @@ import (
 	"os"
 	"time"
 )
+
+var TimeoutError = errors.New("timeout expired")
 
 // PutMessage отправляет байтовую строку (сообщение) в порт
 func PutMessage(port io.Writer, packet presentation.Packet) {
@@ -44,6 +47,7 @@ func GetSerialBytes(port io.Reader, count int) (string, error) {
 	bArr := buffer // base array of slice
 	deadline := time.Now().Add(config.SERIAL_DEADLINE)
 	Log__("Buffer before loop: buffer=%v; len = %v\n", buffer, len(buffer))
+	isTimeout := false
 
 	for {
 		Log__("GetSerialBytes: ready=%d deadline=%v buffer= %v\n", ready, time.Since(deadline), buffer)
@@ -56,12 +60,17 @@ func GetSerialBytes(port io.Reader, count int) (string, error) {
 			break
 		}
 		if time.Now().After(deadline) {
+			isTimeout = true
 			break
 		}
 		buffer = buffer[qBytes:]
 		time.Sleep(config.SERIAL_READ_WAITING) // time.Sleep for signal to OS scheduler
 	}
 	Log__("GetSerialBytes Final: ready=%d deadline=%v buffer= %v\n", ready, time.Since(deadline), buffer)
+
+	if isTimeout {
+		return string(bArr[:ready]), fmt.Errorf("%w: expected: %d, received: %d", TimeoutError, count, ready)
+	}
 
 	return string(bArr[:ready]), nil
 }

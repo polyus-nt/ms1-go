@@ -2,6 +2,7 @@ package ms1
 
 import (
 	"fmt"
+	"github.com/polyus-nt/ms1-go/internal/config"
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"github.com/polyus-nt/ms1-go/internal/io/transport"
 	"io"
@@ -26,17 +27,34 @@ func workerBackTrack(port io.ReadWriter, packets []presentation.Packet, logger f
 			logger(msg)
 		}
 
-		transport.PutMessage(port, packet)
+		var reply Reply
+		transport.Log__("Transmit start\n")
+		for i := 0; i < config.ATTEMPTS_QUANTITY; i++ {
 
-		reply := getReply(port)
-		// TODO: impl recover (for interrupt serial problems, how it resolve and how update state device?)
+			transport.Log__("Transmit: attempt %d\n", i+1)
+
+			transport.PutMessage(port, packet)
+
+			reply, err = getReply(port)
+			if err == nil {
+				break
+			}
+			changeTiming()
+		}
+		restoreTiming()
+
+		if err != nil {
+			transport.Log__("Transmit timeout error!\n")
+			return []Reply{Error{0, fmt.Sprintf("%s", err)}}, err
+		}
+		transport.Log__("Transmit finished\n")
 
 		res = append(res, reply)
 
 		switch r := reply.(type) {
 		case Error, Garbage:
-			err = fmt.Errorf("worker interrupted: %v\n", r.String())
-			return
+			err = fmt.Errorf("worker interrupted: get bad packet: %v\n", r.String())
+			return []Reply{r}, err
 		}
 	}
 	return
@@ -49,4 +67,14 @@ func workerNoReply(port io.ReadWriter, packets []presentation.Packet) {
 		transport.PutMessage(port, packet)
 	}
 	return
+}
+
+func changeTiming() {
+
+	config.SERIAL_DEADLINE += config.DELTA_WAITING
+}
+
+func restoreTiming() {
+
+	config.SERIAL_DEADLINE = config.SERIAL_DEADLINE_DEFAULT
 }
