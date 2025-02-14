@@ -9,6 +9,8 @@ import (
 
 func main() {
 
+	fmt.Println("ms1 with delay between send and reply")
+
 	fmt.Println("Start serial")
 
 	//data := []byte(".dr668e739880610dc1320000000000000800409d0800409d0800409d0800409d0800409d0800409d000000000800409d0800409d0800409d0800409d0800409d0800409d000000000800409d08003b8d0800409d00000000000000000800409d000000000000000000000000000000000000000000000000000000000800409d0800409d0800404d20002000")
@@ -34,6 +36,21 @@ func main() {
 	}
 	defer port.Close()
 
+	//fmt.Println("Start listen...")
+	//for {
+	//
+	//	buf := make([]byte, 1024)
+	//
+	//	sz, err := port.Read(buf)
+	//	if err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//
+	//	if sz != 0 {
+	//		fmt.Printf("Read %d bytes -> %s\n", sz, buf[:sz])
+	//	}
+	//}
+
 	device := ms1.NewDevice(port)
 	fmt.Printf("Device created: %v\n", device)
 	fmt.Printf("Device address: %v\n", device.GetAddress())
@@ -43,6 +60,13 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Println(ping)
+
+	// Получение мета информации об устройстве
+	meta2, err := device.GetMeta()
+	if err != nil {
+		fmt.Println(fmt.Errorf("error getting meta info: %v", err))
+	}
+	fmt.Println(meta2)
 
 	id, err, updated := device.GetId(true, true)
 	if err != nil || updated == false {
@@ -74,9 +98,11 @@ func main() {
 	// Получение мета информации об устройстве
 	meta1, err := deviceClone.GetMeta()
 	if err != nil {
-		log.Fatalln(fmt.Errorf("error getting meta info: %v", err))
+		fmt.Println(fmt.Errorf("error getting meta info: %v", err))
 	}
 	fmt.Println(meta1)
+
+	return
 
 	// Процесс прошивки платы
 	fileName := "C:\\Users\\mrxmr\\Boss\\gitFolders\\Polyus_group\\ms-tuc\\LapkiIdePlatformEdition\\stm32G030\\build\\main_btn_lmp_main.bin"

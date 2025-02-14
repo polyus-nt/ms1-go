@@ -6,7 +6,10 @@ import (
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
 	"github.com/polyus-nt/ms1-go/internal/io/transport"
 	"io"
+	"time"
 )
+
+var ResetBuffers func()
 
 func worker(port io.ReadWriter, packets []presentation.Packet) (res []Reply, err error) {
 
@@ -35,11 +38,14 @@ func workerBackTrack(port io.ReadWriter, packets []presentation.Packet, logger f
 
 			transport.PutMessage(port, packet)
 
+			time.Sleep(777 * time.Millisecond)
+
 			reply, err = getReply(port)
 			if err == nil {
 				break
 			}
 			changeTiming()
+			ResetBuffers()
 		}
 		restoreTiming()
 

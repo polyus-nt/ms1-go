@@ -5,6 +5,7 @@ import (
 	"github.com/polyus-nt/ms1-go/internal/config"
 	"github.com/polyus-nt/ms1-go/internal/io/entity"
 	"github.com/polyus-nt/ms1-go/internal/io/presentation"
+	"go.bug.st/serial"
 	"io"
 )
 
@@ -19,6 +20,27 @@ type Device struct {
 }
 
 func NewDevice(port io.ReadWriter) *Device {
+
+	ResetBuffers = func() {
+
+		fmt.Println("Reset Buffers called")
+
+		if portS, ok := port.(serial.Port); ok {
+
+			err1 := portS.ResetInputBuffer()
+			if err1 != nil {
+				fmt.Println("Reset Input Buffer Error:", err1)
+			}
+
+			err2 := portS.ResetOutputBuffer()
+			if err2 != nil {
+				fmt.Println("Reset Output Buffer Error:", err2)
+			}
+
+			fmt.Println("<< Reset buffers Success >>")
+		}
+	}
+
 	return &Device{port, config.ZeroAddress, 0, nil, nil}
 }
 

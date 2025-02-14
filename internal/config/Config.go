@@ -18,7 +18,7 @@ const (
 
 	CRC_LENGTH = 2
 
-	DEBUG__ = false
+	DEBUG__ = true
 )
 
 var SERIAL_DEADLINE = 888 * time.Millisecond

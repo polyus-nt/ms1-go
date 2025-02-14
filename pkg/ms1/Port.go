@@ -21,7 +21,7 @@ func MkSerial(portName string) (io.ReadWriteCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = port.SetReadTimeout(1 * time.Millisecond)
+	err = port.SetReadTimeout(88 * time.Millisecond)
 	if err != nil {
 		return nil, err
 	}
