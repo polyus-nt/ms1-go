@@ -439,11 +439,13 @@ func (d *Device) loggerIsActive() bool {
 func (d *Device) log(msg BackTrackMsg) {
 
 	if d.loggerIsActive() {
+
+		d.logger <- msg
 		// write only if channel has place for data else skip
-		select {
-		case d.logger <- msg:
-		default:
-		}
+		//select {
+		//case d.logger <- msg:
+		//default:
+		//}
 	}
 }
 
